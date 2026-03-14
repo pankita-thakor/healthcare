@@ -1,3 +1,4 @@
+import type { Route } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -134,7 +135,7 @@ export default function HomePage() {
 
       <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-md">
         <div className="container flex h-16 items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5 transition-opacity hover:opacity-90">
+          <Link href={"/" as Route} className="flex items-center gap-2.5 transition-opacity hover:opacity-90">
             <div className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
               <HeartPulse className="h-5 w-5" />
             </div>
@@ -150,11 +151,11 @@ export default function HomePage() {
           </nav>
           <div className="flex items-center gap-3">
             <ThemeToggle />
-            <Link href="/login" className="hidden text-sm font-medium text-muted-foreground transition-colors hover:text-primary sm:block px-4">
+            <Link href={"/login" as Route} className="hidden text-sm font-medium text-muted-foreground transition-colors hover:text-primary sm:block px-4">
               Login
             </Link>
             <Button asChild className="rounded-full px-6 shadow-md shadow-primary/10 transition-all hover:shadow-lg hover:shadow-primary/20">
-              <Link href="/signup">Get Started</Link>
+              <Link href={"/signup" as Route}>Get Started</Link>
             </Button>
           </div>
         </div>
@@ -183,7 +184,7 @@ export default function HomePage() {
               </p>
               <div className="flex flex-wrap gap-4 pt-2 animate-in fade-in slide-in-from-bottom-6 duration-700 delay-300">
                 <Button size="lg" className="rounded-full px-8 h-12 text-base" asChild>
-                  <Link href="/signup">Book Consultation <ArrowRight className="ml-2 h-4 w-4" /></Link>
+                  <Link href={"/signup" as Route}>Book Consultation <ArrowRight className="ml-2 h-4 w-4" /></Link>
                 </Button>
                 <Button variant="outline" size="lg" className="rounded-full px-8 h-12 text-base bg-background/50 backdrop-blur-sm">
                   Explore Plans
@@ -528,8 +529,8 @@ export default function HomePage() {
                   Join 75,000+ users who trust Healthyfy for their daily healthcare needs.
                 </p>
                 <div className="flex flex-wrap justify-center gap-4">
-                   <Button size="lg" variant="secondary" className="rounded-full px-10 h-14 text-lg font-bold shadow-xl" asChild>
-                      <Link href="/signup">Get Started Now</Link>
+                   <Button size="lg" className="rounded-full px-10 h-14 text-lg font-bold shadow-xl" asChild>
+                      <Link href={"/signup" as Route}>Get Started Now</Link>
                    </Button>
                    <Button size="lg" variant="outline" className="rounded-full px-10 h-14 text-lg font-bold border-white/20 text-primary-foreground hover:bg-white/10">
                       Speak with an Advisor
@@ -543,7 +544,7 @@ export default function HomePage() {
       <footer className="border-t border-border/40 bg-muted/30 pt-20 pb-10">
         <div className="container grid gap-12 lg:grid-cols-4 mb-16">
           <div className="lg:col-span-2 space-y-6">
-            <Link href="/" className="flex items-center gap-2.5">
+            <Link href={"/" as Route} className="flex items-center gap-2.5">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
                 <HeartPulse className="h-5 w-5" />
               </div>
@@ -563,19 +564,19 @@ export default function HomePage() {
           <div>
             <h4 className="font-bold mb-6">Company</h4>
             <ul className="space-y-4 text-sm text-muted-foreground">
-              <li><Link href="#" className="hover:text-primary transition-colors">About Us</Link></li>
-              <li><Link href="#" className="hover:text-primary transition-colors">Our Doctors</Link></li>
-              <li><Link href="#" className="hover:text-primary transition-colors">Careers</Link></li>
-              <li><Link href="#" className="hover:text-primary transition-colors">Press</Link></li>
+              <li><a href="#" className="hover:text-primary transition-colors">About Us</a></li>
+              <li><a href="#doctors" className="hover:text-primary transition-colors">Our Doctors</a></li>
+              <li><a href="#" className="hover:text-primary transition-colors">Careers</a></li>
+              <li><a href="#" className="hover:text-primary transition-colors">Press</a></li>
             </ul>
           </div>
           <div>
             <h4 className="font-bold mb-6">Support</h4>
             <ul className="space-y-4 text-sm text-muted-foreground">
-              <li><Link href="#" className="hover:text-primary transition-colors">Help Center</Link></li>
-              <li><Link href="#" className="hover:text-primary transition-colors">Privacy Policy</Link></li>
-              <li><Link href="#" className="hover:text-primary transition-colors">Terms of Service</Link></li>
-              <li><Link href="#" className="hover:text-primary transition-colors">Contact Us</Link></li>
+              <li><a href="#" className="hover:text-primary transition-colors">Help Center</a></li>
+              <li><a href="#" className="hover:text-primary transition-colors">Privacy Policy</a></li>
+              <li><a href="#" className="hover:text-primary transition-colors">Terms of Service</a></li>
+              <li><a href="#" className="hover:text-primary transition-colors">Contact Us</a></li>
             </ul>
           </div>
         </div>
