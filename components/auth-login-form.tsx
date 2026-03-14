@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { getPostLoginPath, login } from "@/services/auth/service";
+import { getPostLoginPath, login, persistLocalAuthState } from "@/services/auth/service";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -15,8 +15,7 @@ export function LoginForm() {
     setError(null);
     try {
       const user = await login(email, password);
-      document.cookie = `hf_user=${user.id}; path=/; samesite=lax`;
-      document.cookie = `hf_role=${user.role}; path=/; samesite=lax`;
+      persistLocalAuthState(user.id, user.role);
 
       const nextPath = await getPostLoginPath(user.id, user.role);
       window.location.href = nextPath;

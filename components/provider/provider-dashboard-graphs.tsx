@@ -1,10 +1,12 @@
 "use client";
 
 import {
-  Bar,
   BarChart,
   CartesianGrid,
   Cell,
+  Line,
+  LineChart,
+  Bar,
   Pie,
   PieChart,
   ResponsiveContainer,
@@ -25,12 +27,21 @@ interface ScheduleDatum {
   appointments: number;
 }
 
+interface MonthlyDatum {
+  label: string;
+  consultations: number;
+}
+
 export function ProviderDashboardGraphs({
   statusData,
-  scheduleData
+  scheduleData,
+  priorityData,
+  monthlyData
 }: {
   statusData: StatusDatum[];
   scheduleData: ScheduleDatum[];
+  priorityData: StatusDatum[];
+  monthlyData: MonthlyDatum[];
 }) {
   return (
     <div className="grid gap-4 xl:grid-cols-2">
@@ -55,6 +66,30 @@ export function ProviderDashboardGraphs({
             <YAxis allowDecimals={false} />
             <Tooltip />
             <Bar dataKey="appointments" fill="#14b8a6" radius={[6, 6, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+
+      <div className="h-72 w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={monthlyData}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="label" />
+            <YAxis allowDecimals={false} />
+            <Tooltip />
+            <Line type="monotone" dataKey="consultations" stroke="#3b82f6" strokeWidth={3} dot={{ r: 4 }} />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+
+      <div className="h-72 w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={priorityData}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="name" />
+            <YAxis allowDecimals={false} />
+            <Tooltip />
+            <Bar dataKey="value" fill="#f59e0b" radius={[6, 6, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>

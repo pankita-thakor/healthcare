@@ -85,8 +85,8 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           <nav className="space-y-1">
             {links.map((link) => (
               <Link
-                key={link.href}
-                href={link.href}
+                key={String(link.href)}
+                href={link.href as Route}
                 className={cn(
                   "block rounded-md px-3 py-2 text-sm",
                   pathname === link.href ? "bg-primary text-primary-foreground" : "hover:bg-muted"
@@ -102,8 +102,8 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           <div className="mb-4 flex gap-2 overflow-x-auto pb-1 md:hidden">
             {links.map((link) => (
               <Link
-                key={link.href}
-                href={link.href}
+                key={String(link.href)}
+                href={link.href as Route}
                 className={cn(
                   "whitespace-nowrap rounded-md border px-3 py-2 text-sm",
                   pathname === link.href ? "bg-primary text-primary-foreground" : "hover:bg-muted"

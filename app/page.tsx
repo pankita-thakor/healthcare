@@ -1,6 +1,9 @@
-import type { Route } from "next";
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence, useScroll, useTransform, useSpring } from "framer-motion";
 import {
   Activity,
   ArrowRight,
@@ -14,7 +17,13 @@ import {
   Star,
   Stethoscope,
   UserRound,
-  Users
+  Users,
+  MessageCircle,
+  Zap,
+  ChevronRight,
+  Shield,
+  MousePointer2,
+  Search
 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
@@ -26,25 +35,29 @@ const features = [
     title: "24/7 Doctor Access",
     desc: "Connect with licensed doctors anytime through chat and video consults.",
     icon: Stethoscope,
-    color: "bg-blue-500/10 text-blue-500"
+    color: "bg-blue-500/10 text-blue-500",
+    detail: "Over 50+ specialties available."
   },
   {
     title: "AI Health Companion",
     desc: "Track symptoms, get smart reminders, and understand your care journey.",
     icon: Brain,
-    color: "bg-purple-500/10 text-purple-500"
+    color: "bg-purple-500/10 text-purple-500",
+    detail: "Powered by advanced medical LLMs."
   },
   {
     title: "Medication Tracking",
     desc: "Never miss a dose with timely alerts and refill notifications.",
     icon: Activity,
-    color: "bg-emerald-500/10 text-emerald-500"
+    color: "bg-emerald-500/10 text-emerald-500",
+    detail: "Syncs with local pharmacies."
   },
   {
     title: "Secure Health Records",
     desc: "Your reports and prescriptions are encrypted and always available.",
     icon: ShieldCheck,
-    color: "bg-amber-500/10 text-amber-500"
+    color: "bg-amber-500/10 text-amber-500",
+    detail: "HIPAA & GDPR compliant storage."
   }
 ];
 
@@ -61,19 +74,22 @@ const conditions = [
 
 const doctorCategories = [
   {
-    name: "General Physician",
-    image: "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&q=80&w=200&h=200",
-    specialty: "Primary Care"
+    name: "Dr. Arvind K.",
+    image: "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&q=80&w=300&h=300",
+    specialty: "General Physician",
+    tag: "Primary Care"
   },
   {
-    name: "Cardiologist",
-    image: "https://images.unsplash.com/photo-1559839734-2b71f1e3c770?auto=format&fit=crop&q=80&w=200&h=200",
-    specialty: "Heart Specialist"
+    name: "Dr. Sarah M.",
+    image: "https://images.unsplash.com/photo-1559839734-2b71f1e3c770?auto=format&fit=crop&q=80&w=300&h=300",
+    specialty: "Cardiologist",
+    tag: "Heart Expert"
   },
   {
-    name: "Dermatologist",
-    image: "https://images.unsplash.com/photo-1594824476967-48c8b964273f?auto=format&fit=crop&q=80&w=200&h=200",
-    specialty: "Skin Care"
+    name: "Dr. Elena R.",
+    image: "https://images.unsplash.com/photo-1594824476967-48c8b964273f?auto=format&fit=crop&q=80&w=300&h=300",
+    specialty: "Dermatologist",
+    tag: "Skin Specialist"
   }
 ];
 
@@ -116,7 +132,7 @@ function RatingStars({ value }: { value: number }) {
       {Array.from({ length: 5 }).map((_, idx) => (
         <Star
           key={`star-${idx}`}
-          className={`h-3.5 w-3.5 ${idx < value ? "fill-amber-400 text-amber-400" : "text-muted-foreground/20"}`}
+          className={`h-3.5 w-3.5 ${idx < value ? "fill-amber-400 text-amber-400" : "text-muted-foreground/10"}`}
         />
       ))}
     </div>
@@ -124,468 +140,658 @@ function RatingStars({ value }: { value: number }) {
 }
 
 export default function HomePage() {
+  const [activeStep, setActiveStep] = useState(0);
+  const containerRef = useRef(null);
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start start", "end end"]
+  });
+
+  const smoothProgress = useSpring(scrollYProgress, { stiffness: 100, damping: 30, restDelta: 0.001 });
+
+  const aiChatMessages = [
+    { type: "ai", text: "Hi! How can I help you today?" },
+    { type: "user", text: "I have a headache since morning." },
+    { type: "ai", text: "Is it a sharp pain or dull ache? Any other symptoms?" }
+  ];
+
   return (
-    <div className="relative min-h-screen bg-background text-foreground">
-      {/* Background Orbs */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10">
-        <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] rounded-full bg-primary/10 blur-[120px]" />
-        <div className="absolute top-[20%] -right-[10%] w-[35%] h-[35%] rounded-full bg-accent/10 blur-[100px]" />
-        <div className="absolute -bottom-[10%] left-[20%] w-[30%] h-[30%] rounded-full bg-primary/5 blur-[100px]" />
+    <div ref={containerRef} className="relative min-h-screen bg-background text-foreground selection:bg-primary/20">
+      {/* Dynamic Cursor Highlight */}
+      <div className="fixed inset-0 pointer-events-none z-[100] hidden lg:block opacity-20">
+         <motion.div 
+           className="w-96 h-96 rounded-full bg-primary/30 blur-[120px]"
+           animate={{
+             x: [0, 100, -100, 0],
+             y: [0, -100, 100, 0],
+           }}
+           transition={{ duration: 10, repeat: Infinity }}
+         />
       </div>
 
-      <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-md">
+      {/* Progress Bar */}
+      <motion.div 
+        className="fixed top-0 left-0 right-0 h-1 bg-primary z-[100] origin-left"
+        style={{ scaleX: smoothProgress }}
+      />
+
+      {/* Background Grid & Shapes */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10">
+        <div className="absolute inset-0 [background-image:linear-gradient(to_right,hsl(var(--border))_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border))_1px,transparent_1px)] [background-size:64px_64px] opacity-[0.15]" />
+        <div className="absolute top-0 right-0 w-[50%] h-[50%] rounded-full bg-primary/10 blur-[150px] animate-pulse" />
+        <div className="absolute bottom-0 left-0 w-[50%] h-[50%] rounded-full bg-accent/10 blur-[150px] animate-pulse delay-1000" />
+      </div>
+
+      <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/70 backdrop-blur-xl">
         <div className="container flex h-16 items-center justify-between">
-          <Link href={"/" as Route} className="flex items-center gap-2.5 transition-opacity hover:opacity-90">
-            <div className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
-              <HeartPulse className="h-5 w-5" />
-            </div>
+          <Link href="/" className="flex items-center gap-2.5 transition-all hover:scale-105 active:scale-95">
+            <motion.div 
+              whileHover={{ rotate: 180 }}
+              transition={{ type: "spring", stiffness: 260, damping: 20 }}
+              className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+            >
+              <HeartPulse className="h-6 w-6" />
+            </motion.div>
             <span className="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70">
               Healthyfy
             </span>
           </Link>
-          <nav className="hidden items-center gap-8 text-sm font-medium text-muted-foreground lg:flex">
-            <a href="#features" className="transition-colors hover:text-primary">Features</a>
-            <a href="#conditions" className="transition-colors hover:text-primary">Conditions</a>
-            <a href="#doctors" className="transition-colors hover:text-primary">Doctors</a>
-            <a href="#how-it-works" className="transition-colors hover:text-primary">How It Works</a>
+          <nav className="hidden items-center gap-1 text-sm font-medium lg:flex">
+            {["Features", "Conditions", "Doctors", "How it Works"].map((item) => (
+              <a 
+                key={item}
+                href={`#${item.toLowerCase().replace(/\s+/g, '-')}`} 
+                className="px-4 py-2 rounded-full transition-all hover:bg-muted/50 hover:text-primary"
+              >
+                {item}
+              </a>
+            ))}
           </nav>
           <div className="flex items-center gap-3">
             <ThemeToggle />
-            <Link href={"/login" as Route} className="hidden text-sm font-medium text-muted-foreground transition-colors hover:text-primary sm:block px-4">
+            <div className="hidden h-6 w-[1px] bg-border/60 mx-1 sm:block" />
+            <Link href="/login" className="hidden text-sm font-semibold hover:text-primary sm:block px-4">
               Login
             </Link>
-            <Button asChild className="rounded-full px-6 shadow-md shadow-primary/10 transition-all hover:shadow-lg hover:shadow-primary/20">
-              <Link href={"/signup" as Route}>Get Started</Link>
+            <Button asChild className="rounded-full px-6 font-bold shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all">
+              <Link href="/signup">Get Started</Link>
             </Button>
           </div>
         </div>
       </header>
 
       <main>
-        {/* Hero Section */}
-        <section className="container pt-20 pb-16 lg:pt-32 lg:pb-24">
+        {/* Creative Hero Section */}
+        <section className="container relative pt-16 pb-24 lg:pt-32 lg:pb-32 overflow-hidden">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div className="space-y-8">
-              <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-primary animate-in fade-in slide-in-from-bottom-3 duration-500">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+            <motion.div 
+              initial={{ opacity: 0, x: -50 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
+              className="space-y-8 relative z-10"
+            >
+              <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-primary">
+                <Zap className="h-3 w-3 fill-primary" />
+                The Future of Family Health
+              </div>
+              <h1 className="text-6xl lg:text-[5.5rem] font-black leading-[0.9] tracking-tighter">
+                Health <br />
+                <span className="text-primary italic font-serif relative">
+                  Simplified.
+                  <motion.span 
+                    className="absolute -bottom-2 left-0 w-full h-2 bg-primary/20 rounded-full"
+                    initial={{ width: 0 }}
+                    animate={{ width: "100%" }}
+                    transition={{ delay: 1, duration: 0.8 }}
+                  />
                 </span>
-                Smart Healthcare Platform
-              </div>
-              <h1 className="text-5xl lg:text-7xl font-bold leading-[1.1] tracking-tight animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
-                Personalized care, <br />
-                <span className="text-primary italic font-serif">right when you </span>
-                need it.
               </h1>
-              <p className="max-w-[540px] text-lg lg:text-xl text-muted-foreground leading-relaxed animate-in fade-in slide-in-from-bottom-5 duration-700 delay-200">
-                Healthyfy combines expert doctors, proactive monitoring, and AI-powered guidance so families can manage
-                everyday health and chronic conditions with confidence.
+              <p className="max-w-[500px] text-lg lg:text-xl text-muted-foreground leading-relaxed font-medium">
+                Expert doctors, AI-driven monitoring, and a seamless care journey—all in your pocket. Because your family deserves the best.
               </p>
-              <div className="flex flex-wrap gap-4 pt-2 animate-in fade-in slide-in-from-bottom-6 duration-700 delay-300">
-                <Button size="lg" className="rounded-full px-8 h-12 text-base" asChild>
-                  <Link href={"/signup" as Route}>Book Consultation <ArrowRight className="ml-2 h-4 w-4" /></Link>
+              <div className="flex flex-wrap gap-4 pt-4">
+                <Button size="lg" className="rounded-full px-8 h-14 text-lg font-bold group bg-primary hover:bg-primary/90" asChild>
+                  <Link href="/signup">
+                    Consult Now <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-2" />
+                  </Link>
                 </Button>
-                <Button variant="outline" size="lg" className="rounded-full px-8 h-12 text-base bg-background/50 backdrop-blur-sm">
-                  Explore Plans
+                <Button variant="outline" size="lg" className="rounded-full px-8 h-14 text-lg font-bold backdrop-blur-sm bg-background/40">
+                  Our Specialists
                 </Button>
               </div>
-              <div className="flex flex-wrap items-center gap-8 pt-6 animate-in fade-in slide-in-from-bottom-7 duration-700 delay-400">
-                <div className="flex -space-x-3">
-                  {[1, 2, 3, 4].map((i) => (
-                    <div key={i} className="h-10 w-10 rounded-full border-2 border-background bg-muted overflow-hidden">
+              
+              <div className="flex flex-wrap items-center gap-8 pt-8 border-t border-border/40">
+                <div className="flex -space-x-4">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <motion.div 
+                      key={i} 
+                      whileHover={{ y: -5, scale: 1.1, zIndex: 10 }}
+                      className="h-12 w-12 rounded-full border-2 border-background bg-muted overflow-hidden cursor-pointer"
+                    >
                       <Image 
-                        src={`https://i.pravatar.cc/100/?u=${i + 10}`} 
-                        alt="User" 
-                        width={40} 
-                        height={40} 
+                        src={`https://i.pravatar.cc/100/?u=${i + 15}`} 
+                        alt="Avatar" 
+                        width={48} 
+                        height={48} 
                       />
-                    </div>
+                    </motion.div>
                   ))}
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-background bg-primary text-[10px] font-bold text-primary-foreground">
-                    +75k
-                  </div>
                 </div>
-                <div className="space-y-0.5">
-                  <div className="flex items-center gap-1">
-                    <RatingStars value={5} />
-                    <span className="text-sm font-bold ml-1">4.9/5</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground font-medium">Trusted by 75,000+ patients</p>
+                <div>
+                   <div className="flex items-center gap-1.5">
+                      <RatingStars value={5} />
+                      <span className="text-sm font-black">4.9/5</span>
+                   </div>
+                   <p className="text-xs text-muted-foreground font-semibold">from 75k+ satisfied patients</p>
                 </div>
               </div>
-            </div>
+            </motion.div>
 
-            <div className="relative animate-in fade-in zoom-in-95 duration-1000 delay-200">
-              <div className="absolute -inset-4 rounded-[2.5rem] bg-gradient-to-tr from-primary/20 via-transparent to-accent/20 blur-2xl opacity-50" />
-              <Card className="relative overflow-hidden border-border/50 bg-background/60 backdrop-blur-xl shadow-2xl rounded-[2rem] p-2">
-                <div className="bg-muted/30 rounded-[1.5rem] p-6 lg:p-8 space-y-6">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-bold text-xl">Health Snapshot</h3>
-                    <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 rounded-full px-3 py-1">
-                      Today
-                    </Badge>
-                  </div>
-                  
-                  <div className="space-y-4">
-                    <div className="group rounded-2xl border border-border/50 bg-background/80 p-4 transition-all hover:border-primary/30 hover:shadow-md">
-                      <div className="flex items-center gap-4">
-                        <div className="h-12 w-12 rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center">
-                          <CalendarCheck2 className="h-6 w-6" />
-                        </div>
-                        <div>
-                          <p className="text-sm text-muted-foreground font-medium">Next Appointment</p>
-                          <p className="font-bold">Dr. Nisha Rao - Cardiology</p>
-                          <p className="text-xs text-muted-foreground mt-0.5">Today at 6:30 PM</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="group rounded-2xl border border-border/50 bg-background/80 p-4 transition-all hover:border-primary/30 hover:shadow-md">
-                      <div className="flex items-center gap-4">
-                        <div className="h-12 w-12 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
-                          <Activity className="h-6 w-6" />
-                        </div>
-                        <div>
-                          <p className="text-sm text-muted-foreground font-medium">Medication Reminder</p>
-                          <p className="font-bold">Metformin 500mg</p>
-                          <p className="text-xs text-muted-foreground mt-0.5">8:00 PM • After dinner</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="group rounded-2xl border border-border/50 bg-primary/5 p-4 transition-all hover:border-primary/30">
-                      <div className="flex items-center justify-between mb-2">
-                        <p className="text-sm font-bold text-primary">Health Score</p>
-                        <p className="text-xl font-black text-primary">92%</p>
-                      </div>
-                      <div className="h-2 w-full bg-primary/10 rounded-full overflow-hidden">
-                        <div className="h-full bg-primary rounded-full w-[92%] transition-all duration-1000" />
-                      </div>
-                      <p className="text-[10px] text-primary/70 mt-2 font-semibold uppercase tracking-wider">Excellent adherence</p>
-                    </div>
-                  </div>
-
-                  <div className="pt-2 grid grid-cols-2 gap-3">
-                    <div className="rounded-2xl border border-border/50 bg-background/40 p-3 text-center">
-                      <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">Steps</p>
-                      <p className="text-lg font-bold mt-1">8,432</p>
-                    </div>
-                    <div className="rounded-2xl border border-border/50 bg-background/40 p-3 text-center">
-                      <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">Sleep</p>
-                      <p className="text-lg font-bold mt-1">7h 20m</p>
-                    </div>
-                  </div>
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.8, rotateY: -20 }}
+              animate={{ opacity: 1, scale: 1, rotateY: 0 }}
+              transition={{ duration: 1, ease: "easeOut" }}
+              className="relative perspective-1000"
+            >
+              <div className="absolute -inset-10 bg-gradient-to-tr from-primary/30 to-accent/30 rounded-full blur-[100px] opacity-40 animate-pulse" />
+              
+              {/* Interactive Phone Mockup */}
+              <motion.div 
+                whileHover={{ rotateY: 5, rotateX: -5, scale: 1.02 }}
+                className="relative z-10 w-full max-w-[420px] mx-auto overflow-hidden rounded-[3rem] border-8 border-foreground/5 bg-background shadow-[0_0_50px_-12px_rgba(0,0,0,0.25)] shadow-primary/10"
+              >
+                <div className="absolute top-0 inset-x-0 h-8 flex items-center justify-center gap-1.5 bg-muted/20">
+                   <div className="w-12 h-4 rounded-full bg-foreground/10" />
                 </div>
-              </Card>
+                <div className="p-6 pt-12 space-y-6 min-h-[580px] bg-gradient-to-b from-muted/30 to-background">
+                  <div className="flex items-center justify-between">
+                     <div>
+                       <p className="text-xs text-muted-foreground font-bold">Good morning,</p>
+                       <h3 className="font-bold text-xl">Arjun Sharma</h3>
+                     </div>
+                     <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                        <Users className="h-5 w-5" />
+                     </div>
+                  </div>
 
-              {/* Decorative elements */}
-              <div className="absolute -right-8 -bottom-8 h-24 w-24 bg-accent/20 rounded-full blur-2xl animate-pulse" />
-              <div className="absolute -left-12 top-1/2 -translate-y-1/2 h-16 w-16 bg-primary/20 rounded-full blur-xl animate-bounce duration-[3000ms]" />
-            </div>
+                  <Card className="border-border/60 bg-background/80 backdrop-blur-sm rounded-2xl overflow-hidden group transition-all hover:shadow-lg">
+                     <CardContent className="p-4 space-y-4">
+                        <div className="flex items-center justify-between">
+                           <Badge variant="secondary" className="bg-blue-500/10 text-blue-500 border-none font-bold">Appointment</Badge>
+                           <span className="text-[10px] text-muted-foreground font-bold uppercase">In 45 mins</span>
+                        </div>
+                        <div className="flex items-center gap-4">
+                           <div className="h-14 w-14 rounded-2xl overflow-hidden bg-muted">
+                              <Image src="https://i.pravatar.cc/100/?u=doc1" alt="Doctor" width={56} height={56} />
+                           </div>
+                           <div>
+                              <p className="font-bold">Dr. Nisha Rao</p>
+                              <p className="text-[11px] text-muted-foreground">General Physician • Video Call</p>
+                           </div>
+                        </div>
+                        <Button className="w-full rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold h-10">Join Consultation</Button>
+                     </CardContent>
+                  </Card>
+
+                  <div className="space-y-3">
+                     <div className="flex items-center justify-between">
+                        <h4 className="text-sm font-bold">Daily Progress</h4>
+                        <span className="text-[10px] text-primary font-black uppercase">Goal 85%</span>
+                     </div>
+                     <div className="grid grid-cols-2 gap-3">
+                        <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-center">
+                           <Activity className="h-5 w-5 text-emerald-500 mx-auto mb-2" />
+                           <p className="text-[10px] text-emerald-600 font-bold uppercase">Health Score</p>
+                           <p className="text-xl font-black text-emerald-700">92</p>
+                        </div>
+                        <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-center">
+                           <Brain className="h-5 w-5 text-amber-500 mx-auto mb-2" />
+                           <p className="text-[10px] text-amber-600 font-bold uppercase">Mindfulness</p>
+                           <p className="text-xl font-black text-amber-700">15m</p>
+                        </div>
+                     </div>
+                  </div>
+
+                  {/* Mock AI Chat Bubble */}
+                  <motion.div 
+                    animate={{ y: [0, -5, 0] }}
+                    transition={{ duration: 4, repeat: Infinity }}
+                    className="p-4 rounded-2xl bg-primary text-primary-foreground shadow-xl shadow-primary/20 relative"
+                  >
+                    <div className="absolute -top-2 left-4 h-4 w-4 bg-primary rotate-45" />
+                    <div className="flex gap-3">
+                       <div className="h-8 w-8 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+                          <Brain className="h-4 w-4" />
+                       </div>
+                       <p className="text-xs font-medium leading-relaxed italic">
+                         &quot;Your blood pressure trend is improving! Don&apos;t forget your evening medication.&quot;
+                       </p>
+                    </div>
+                  </motion.div>
+                </div>
+              </motion.div>
+
+              {/* Decorative Floating Elements */}
+              <motion.div 
+                animate={{ y: [0, 20, 0], x: [0, 10, 0] }}
+                transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+                className="absolute -right-12 top-1/4 z-20 hidden xl:block"
+              >
+                <div className="p-4 rounded-2xl bg-background shadow-2xl border border-border/40 backdrop-blur-md flex items-center gap-3">
+                   <div className="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center text-white">
+                      <CalendarCheck2 className="h-5 w-5" />
+                   </div>
+                   <div>
+                      <p className="text-[10px] font-black uppercase text-muted-foreground">Booking</p>
+                      <p className="text-xs font-bold">Consultation Confirmed</p>
+                   </div>
+                </div>
+              </motion.div>
+
+              <motion.div 
+                animate={{ y: [0, -20, 0], x: [0, -10, 0] }}
+                transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+                className="absolute -left-16 bottom-1/4 z-20 hidden xl:block"
+              >
+                <div className="p-4 rounded-2xl bg-background shadow-2xl border border-border/40 backdrop-blur-md flex items-center gap-3">
+                   <div className="h-10 w-10 rounded-full bg-emerald-500 flex items-center justify-center text-white">
+                      <Activity className="h-5 w-5" />
+                   </div>
+                   <div>
+                      <p className="text-[10px] font-black uppercase text-muted-foreground">Realtime</p>
+                      <p className="text-xs font-bold">Vitals Syncing...</p>
+                   </div>
+                </div>
+              </motion.div>
+            </motion.div>
           </div>
         </section>
 
-        {/* Marquee Section */}
-        <div className="relative border-y border-border/40 bg-muted/30 py-10 overflow-hidden">
-          <div className="flex animate-[slide_30s_linear_infinite] whitespace-nowrap">
+        {/* Marquee Ticker */}
+        <div className="relative border-y border-border/60 bg-muted/30 py-12 overflow-hidden">
+          <div className="flex animate-[slide_40s_linear_infinite] whitespace-nowrap">
             {[...sliderItems, ...sliderItems, ...sliderItems].map((item, idx) => (
-              <div key={`${item}-${idx}`} className="mx-8 flex items-center gap-3">
-                <div className="h-2 w-2 rounded-full bg-primary/40" />
-                <span className="text-lg font-semibold tracking-tight text-muted-foreground/80 italic">{item}</span>
+              <div key={`${item}-${idx}`} className="mx-12 flex items-center gap-4">
+                <div className="h-2 w-2 rounded-full bg-primary" />
+                <span className="text-2xl font-black tracking-tight text-foreground/40 italic hover:text-primary transition-colors cursor-default select-none uppercase">{item}</span>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Features Section */}
-        <section id="features" className="container py-24 lg:py-32">
-          <div className="max-w-3xl mb-16 space-y-4">
-            <Badge variant="outline" className="rounded-full px-4 py-1 border-primary/20 text-primary bg-primary/5">
-              Features
-            </Badge>
-            <h2 className="text-4xl lg:text-5xl font-bold tracking-tight">
-              Features that <span className="text-primary italic font-serif">simplify</span> healthcare.
-            </h2>
-            <p className="text-lg text-muted-foreground">
-              We&apos;ve built everything you need to manage your health in one place, with a focus on simplicity and security.
+        {/* Features with Hover Effects */}
+        <section id="features" className="container py-24 lg:py-40">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-20">
+            <div className="space-y-6 max-w-2xl">
+              <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1 text-xs font-black uppercase tracking-widest text-primary">
+                Features
+              </div>
+              <h2 className="text-5xl lg:text-7xl font-black tracking-tighter">
+                Health tech <br />that <span className="text-primary italic font-serif">works for you.</span>
+              </h2>
+            </div>
+            <p className="text-xl text-muted-foreground font-medium max-w-[350px]">
+              We simplified the complex stuff so you can focus on living your best life.
             </p>
           </div>
 
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
             {features.map((feature, idx) => (
-              <Card key={feature.title} className="group relative overflow-hidden border-border/60 bg-background/50 transition-all hover:-translate-y-1 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5">
-                <CardHeader className="space-y-4">
-                  <div className={`h-12 w-12 rounded-2xl ${feature.color} flex items-center justify-center transition-transform group-hover:scale-110 duration-300`}>
-                    <feature.icon className="h-6 w-6" />
-                  </div>
-                  <CardTitle className="text-xl font-bold">{feature.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground leading-relaxed">{feature.desc}</p>
-                </CardContent>
-                <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                   <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Plus className="h-3 w-3 text-primary" />
-                   </div>
+              <motion.div
+                key={feature.title}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.1 }}
+                viewport={{ once: true }}
+                whileHover={{ y: -10 }}
+                className="group relative overflow-hidden p-8 rounded-[2.5rem] border border-border/60 bg-background/50 backdrop-blur-sm transition-all hover:border-primary/40 hover:shadow-2xl hover:shadow-primary/5"
+              >
+                <div className={`h-16 w-16 rounded-[1.5rem] ${feature.color} flex items-center justify-center mb-8 transition-transform group-hover:scale-110 group-hover:rotate-6 duration-300`}>
+                  <feature.icon className="h-8 w-8" />
                 </div>
-              </Card>
+                <h3 className="text-2xl font-bold mb-4">{feature.title}</h3>
+                <p className="text-muted-foreground leading-relaxed font-medium mb-6">{feature.desc}</p>
+                <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-primary/60 group-hover:text-primary transition-colors">
+                   {feature.detail} <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-1" />
+                </div>
+                <div className="absolute -bottom-10 -right-10 h-32 w-32 bg-primary/5 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity" />
+              </motion.div>
             ))}
           </div>
         </section>
 
-        {/* Conditions Section */}
-        <section id="conditions" className="relative py-24 bg-muted/40 overflow-hidden">
-          <div className="absolute inset-0 pointer-events-none opacity-[0.03] [background-image:radial-gradient(circle_at_center,black_1px,transparent_1px)] [background-size:24px_24px]" />
-          <div className="container relative">
-            <div className="text-center max-w-2xl mx-auto mb-16 space-y-4">
-              <h2 className="text-4xl font-bold tracking-tight">Medical conditions we support</h2>
-              <p className="text-muted-foreground">Specialized care pathways for chronic and everyday health concerns.</p>
-            </div>
-            
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {conditions.map((condition) => (
-                <div 
-                  key={condition} 
-                  className="group flex items-center justify-between rounded-2xl border border-border/60 bg-background/80 p-5 transition-all hover:border-primary/40 hover:bg-background hover:shadow-lg hover:shadow-primary/5"
-                >
-                  <span className="font-bold tracking-tight">{condition}</span>
-                  <div className="h-8 w-8 rounded-full bg-primary/5 flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-all">
-                    <CheckCircle2 className="h-4 w-4" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Doctors Section */}
-        <section id="doctors" className="container py-24 lg:py-32">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-16">
-            <div className="space-y-4 max-w-2xl">
-              <Badge variant="outline" className="rounded-full px-4 py-1 border-primary/20 text-primary bg-primary/5">
-                Specialists
-              </Badge>
-              <h2 className="text-4xl lg:text-5xl font-bold tracking-tight">Consult with the best.</h2>
-              <p className="text-lg text-muted-foreground">Access verified specialists with transparent ratings and proven expertise.</p>
-            </div>
-            <Button variant="ghost" className="rounded-full group">
-              View all specialists <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-            </Button>
-          </div>
-
-          <div className="grid gap-8 md:grid-cols-3">
-            {doctorCategories.map((doctor, idx) => (
-              <div key={doctor.name} className="group relative">
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity z-10 rounded-3xl" />
-                <div className="aspect-[4/5] relative overflow-hidden rounded-3xl border border-border/50 bg-muted">
-                  <Image 
-                    src={doctor.image} 
-                    alt={doctor.name} 
-                    fill 
-                    className="object-cover transition-transform duration-500 group-hover:scale-110" 
-                  />
-                  <div className="absolute bottom-0 left-0 right-0 p-6 z-20 translate-y-4 group-hover:translate-y-0 transition-transform duration-300 opacity-0 group-hover:opacity-100">
-                    <p className="text-white/80 text-sm font-medium">{doctor.specialty}</p>
-                    <h3 className="text-white text-2xl font-bold mt-1">{doctor.name}</h3>
-                    <div className="flex items-center gap-1 mt-3">
-                      <RatingStars value={5} />
-                      <span className="text-white/90 text-xs font-bold ml-1">4.9 (120+ reviews)</span>
+        {/* AI Companion Preview - High Interactivity */}
+        <section id="ai-companion" className="relative py-24 lg:py-40 bg-foreground text-background overflow-hidden">
+           <div className="absolute inset-0 pointer-events-none">
+              <div className="absolute top-0 left-0 w-full h-full [background-image:radial-gradient(circle_at_center,rgba(255,255,255,0.05)_1px,transparent_1px)] [background-size:40px_40px]" />
+           </div>
+           
+           <div className="container relative">
+              <div className="grid lg:grid-cols-2 gap-20 items-center">
+                 <div className="space-y-10">
+                    <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1 text-xs font-black uppercase tracking-widest text-white">
+                      AI Integration
                     </div>
-                  </div>
-                </div>
-                <div className="mt-4 flex items-center justify-between px-2">
-                   <div>
-                     <h4 className="font-bold text-lg">{doctor.name}</h4>
-                     <p className="text-sm text-muted-foreground">{doctor.specialty}</p>
-                   </div>
-                   <div className="h-10 w-10 rounded-full border border-border flex items-center justify-center group-hover:bg-primary group-hover:border-primary group-hover:text-primary-foreground transition-all">
-                      <ArrowRight className="h-5 w-5" />
-                   </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
+                    <h2 className="text-5xl lg:text-7xl font-black tracking-tighter leading-[0.9]">
+                      Your <span className="text-primary">24/7 AI</span> <br />Health Coach.
+                    </h2>
+                    <p className="text-xl text-background/60 leading-relaxed font-medium">
+                      Healthyfy AI understands your vitals, analyzes your symptoms, and proactively suggests lifestyle adjustments before issues arise.
+                    </p>
+                    
+                    <ul className="space-y-6">
+                       {[
+                         "Smart symptom analysis in 30 seconds",
+                         "Proactive medication & hydration alerts",
+                         "Personalized daily health action plans"
+                       ].map((item, i) => (
+                         <motion.li 
+                           key={i}
+                           initial={{ opacity: 0, x: -20 }}
+                           whileInView={{ opacity: 1, x: 0 }}
+                           transition={{ delay: i * 0.2 }}
+                           className="flex items-center gap-4 text-lg font-bold"
+                         >
+                           <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+                              <CheckCircle2 className="h-5 w-5 text-foreground" />
+                           </div>
+                           {item}
+                         </motion.li>
+                       ))}
+                    </ul>
 
-        {/* How It Works */}
-        <section id="how-it-works" className="container py-24 lg:py-32">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
-            <div className="space-y-8">
-              <div className="space-y-4">
-                <Badge variant="outline" className="rounded-full px-4 py-1 border-primary/20 text-primary bg-primary/5">
-                  Process
-                </Badge>
-                <h2 className="text-4xl lg:text-5xl font-bold tracking-tight">Your health journey, <span className="text-primary italic font-serif">simplified.</span></h2>
-              </div>
-              
-              <div className="space-y-6">
-                {[
-                  { title: "Choose a specialist", icon: Stethoscope, desc: "Search by symptoms, specialty, and availability from our curated list of verified experts." },
-                  { title: "Book and consult", icon: CalendarCheck2, desc: "Pick your slot and connect by secure video call or chat within minutes." },
-                  { title: "Follow treatment plan", icon: Smartphone, desc: "Get AI-powered medicine reminders and proactive progress check-ins." }
-                ].map((step, idx) => (
-                  <div key={step.title} className="flex gap-6 group">
-                    <div className="flex-shrink-0 relative">
-                      <div className="h-14 w-14 rounded-2xl bg-background border border-border/60 shadow-sm flex items-center justify-center z-10 relative group-hover:border-primary/40 transition-colors">
-                        <step.icon className="h-6 w-6 text-primary" />
-                      </div>
-                      {idx !== 2 && (
-                        <div className="absolute top-14 left-7 bottom-[-24px] w-[1px] bg-border/60 group-hover:bg-primary/30 transition-colors" />
-                      )}
-                    </div>
-                    <div className="pb-8">
-                      <h3 className="text-xl font-bold mb-2">{idx + 1}. {step.title}</h3>
-                      <p className="text-muted-foreground leading-relaxed">{step.desc}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            
-            <div className="relative">
-              <div className="absolute -inset-4 bg-primary/10 rounded-[2.5rem] blur-3xl opacity-30" />
-              <div className="relative rounded-[2rem] overflow-hidden border border-border/50 shadow-2xl bg-muted aspect-square">
-                <Image 
-                  src="https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=800&h=800" 
-                  alt="Healthcare professional" 
-                  fill 
-                  className="object-cover" 
-                />
-                <div className="absolute inset-0 bg-gradient-to-tr from-primary/40 to-transparent mix-blend-multiply" />
-                <div className="absolute bottom-8 left-8 right-8 bg-background/90 backdrop-blur-md p-6 rounded-2xl border border-white/20 shadow-xl">
-                   <div className="flex items-center gap-4">
-                      <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center">
-                         <ShieldCheck className="h-6 w-6 text-primary" />
-                      </div>
-                      <div>
-                        <p className="font-bold">HIPAA Compliant</p>
-                        <p className="text-xs text-muted-foreground">Your data is encrypted & secure</p>
-                      </div>
-                   </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
+                    <Button variant="outline" size="lg" className="rounded-full px-10 h-14 border-white/20 text-white hover:bg-white/10 font-bold text-lg">
+                       Meet the AI
+                    </Button>
+                 </div>
 
-        {/* Testimonials */}
-        <section className="bg-foreground text-background py-24 lg:py-32 overflow-hidden">
-          <div className="container">
-            <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-12 mb-16">
-              <div className="space-y-4 max-w-2xl">
-                 <h2 className="text-4xl lg:text-5xl font-bold tracking-tight">Trusted by patients <br />and families across India.</h2>
-                 <p className="text-background/60 text-lg">Don&apos;t just take our word for it, hear from our vibrant community.</p>
-              </div>
-              <div className="flex-shrink-0 bg-background/10 backdrop-blur-sm rounded-3xl p-8 border border-background/10">
-                 <p className="text-sm text-background/60 font-bold uppercase tracking-widest mb-2">Average Rating</p>
-                 <div className="flex items-end gap-3">
-                    <span className="text-5xl font-black">4.8</span>
-                    <div className="pb-1.5 space-y-1">
-                      <RatingStars value={5} />
-                      <p className="text-xs font-medium text-background/40">Out of 5,000+ reviews</p>
-                    </div>
+                 <div className="relative">
+                    <motion.div 
+                      initial={{ opacity: 0, y: 30 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      className="bg-background rounded-[2.5rem] p-8 shadow-2xl relative z-10"
+                    >
+                       <div className="flex items-center gap-4 mb-10 pb-6 border-b border-border/40">
+                          <div className="h-14 w-14 rounded-2xl bg-primary flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/20">
+                             <Brain className="h-8 w-8" />
+                          </div>
+                          <div>
+                             <h4 className="font-bold text-xl text-foreground">Healthyfy AI</h4>
+                             <p className="text-xs text-emerald-500 font-black uppercase tracking-widest">Always Online • Proactive</p>
+                          </div>
+                       </div>
+
+                       <div className="space-y-6 mb-10">
+                          {aiChatMessages.map((msg, i) => (
+                            <motion.div 
+                              key={i}
+                              initial={{ opacity: 0, scale: 0.9, x: msg.type === "ai" ? -20 : 20 }}
+                              whileInView={{ opacity: 1, scale: 1, x: 0 }}
+                              transition={{ delay: i * 0.3 }}
+                              className={`flex ${msg.type === "ai" ? "justify-start" : "justify-end"}`}
+                            >
+                               <div className={`max-w-[80%] p-4 rounded-2xl text-sm font-medium shadow-sm ${msg.type === "ai" ? "bg-muted text-foreground rounded-bl-none" : "bg-primary text-primary-foreground rounded-br-none"}`}>
+                                  {msg.text}
+                               </div>
+                            </motion.div>
+                          ))}
+                       </div>
+
+                       <div className="relative">
+                          <input 
+                            type="text" 
+                            placeholder="Type a message..." 
+                            className="w-full h-14 bg-muted/50 border-none rounded-2xl px-6 pr-14 text-sm font-bold text-foreground focus:ring-2 focus:ring-primary transition-all outline-none"
+                            readOnly
+                          />
+                          <div className="absolute right-3 top-2 h-10 w-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center">
+                             <ArrowRight className="h-5 w-5" />
+                          </div>
+                       </div>
+                    </motion.div>
+                    
+                    {/* Decorative Background for AI section */}
+                    <div className="absolute -inset-10 bg-primary/20 rounded-[5rem] blur-[100px] -z-10 animate-pulse" />
                  </div>
               </div>
-            </div>
-
-            <div className="grid md:grid-cols-3 gap-6">
-              {testimonials.map((testimonial, idx) => (
-                <div 
-                  key={testimonial.name} 
-                  className={`p-8 rounded-[2rem] border border-background/10 bg-background/5 backdrop-blur-sm space-y-6 ${idx === 1 ? 'md:translate-y-8' : ''}`}
-                >
-                  <div className="flex items-center gap-4">
-                     <div className="h-12 w-12 rounded-full overflow-hidden border-2 border-primary/40">
-                        <Image src={testimonial.avatar} alt={testimonial.name} width={48} height={48} />
-                     </div>
-                     <div>
-                       <p className="font-bold">{testimonial.name}</p>
-                       <p className="text-xs text-background/40">{testimonial.role}</p>
-                     </div>
-                  </div>
-                  <RatingStars value={testimonial.rating} />
-                  <p className="text-lg leading-relaxed text-background/80 font-medium italic">
-                    &quot;{testimonial.quote}&quot;
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
+           </div>
         </section>
 
-        {/* CTA Section */}
-        <section className="container py-24 lg:py-32">
-          <div className="relative rounded-[3rem] bg-primary overflow-hidden p-12 lg:p-24 text-center">
-             <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none [background-image:radial-gradient(circle_at_center,white_1px,transparent_1px)] [background-size:32px_32px]" />
-             <div className="absolute -top-24 -right-24 h-64 w-64 bg-white/20 rounded-full blur-3xl animate-pulse" />
-             <div className="absolute -bottom-24 -left-24 h-64 w-64 bg-accent/30 rounded-full blur-3xl animate-bounce duration-[5000ms]" />
-             
-             <div className="relative z-10 max-w-2xl mx-auto space-y-8">
-                <h2 className="text-4xl lg:text-6xl font-bold tracking-tight text-primary-foreground">
-                  Ready to transform your health?
-                </h2>
-                <p className="text-xl text-primary-foreground/80 font-medium">
-                  Join 75,000+ users who trust Healthyfy for their daily healthcare needs.
-                </p>
-                <div className="flex flex-wrap justify-center gap-4">
-                   <Button size="lg" className="rounded-full px-10 h-14 text-lg font-bold shadow-xl" asChild>
-                      <Link href={"/signup" as Route}>Get Started Now</Link>
-                   </Button>
-                   <Button size="lg" variant="outline" className="rounded-full px-10 h-14 text-lg font-bold border-white/20 text-primary-foreground hover:bg-white/10">
-                      Speak with an Advisor
-                   </Button>
-                </div>
-             </div>
-          </div>
+        {/* Specialists with Interactive Hover */}
+        <section id="doctors" className="container py-24 lg:py-40">
+           <div className="text-center space-y-6 max-w-3xl mx-auto mb-24">
+              <Badge variant="outline" className="rounded-full px-6 py-1.5 border-primary/20 text-primary bg-primary/5 font-black uppercase tracking-widest">
+                Our Specialists
+              </Badge>
+              <h2 className="text-5xl lg:text-7xl font-black tracking-tighter">
+                Consult with <span className="text-primary italic font-serif">elite</span> minds.
+              </h2>
+              <p className="text-xl text-muted-foreground font-medium">
+                We only onboard the top 5% of medical professionals to ensure you receive world-class care.
+              </p>
+           </div>
+
+           <div className="grid md:grid-cols-3 gap-10">
+              {doctorCategories.map((doctor, idx) => (
+                <motion.div 
+                  key={doctor.name}
+                  whileHover={{ y: -15 }}
+                  className="group relative"
+                >
+                  <div className="relative aspect-[3/4] rounded-[3rem] overflow-hidden border border-border/40 shadow-2xl">
+                     <Image 
+                       src={doctor.image} 
+                       alt={doctor.name} 
+                       fill 
+                       className="object-cover transition-transform duration-700 group-hover:scale-110" 
+                     />
+                     <div className="absolute inset-0 bg-gradient-to-t from-foreground/90 via-foreground/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500" />
+                     
+                     <div className="absolute bottom-0 left-0 right-0 p-8 translate-y-10 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-500 z-10">
+                        <Badge className="mb-4 bg-primary/20 text-primary border-none font-black uppercase text-[10px] tracking-widest">{doctor.tag}</Badge>
+                        <h3 className="text-3xl font-black text-background mb-2">{doctor.name}</h3>
+                        <p className="text-background/60 font-bold mb-6 italic">{doctor.specialty}</p>
+                        <Button className="w-full rounded-2xl bg-primary text-primary-foreground font-black h-14 shadow-xl">Book Session</Button>
+                     </div>
+                  </div>
+                  
+                  <div className="mt-8 flex items-center justify-between px-4 group-hover:opacity-0 transition-opacity">
+                     <div>
+                        <h4 className="text-2xl font-black">{doctor.name}</h4>
+                        <p className="text-sm text-muted-foreground font-bold italic">{doctor.specialty}</p>
+                     </div>
+                     <div className="h-12 w-12 rounded-full border border-border/60 flex items-center justify-center group-hover:bg-primary group-hover:border-primary group-hover:text-primary-foreground transition-all">
+                        <ChevronRight className="h-6 w-6" />
+                     </div>
+                  </div>
+                </motion.div>
+              ))}
+           </div>
+        </section>
+
+        {/* Interactive Steps Section */}
+        <section id="how-it-works" className="relative py-24 lg:py-40 bg-muted/30 overflow-hidden">
+           <div className="container">
+              <div className="grid lg:grid-cols-2 gap-20 items-center">
+                 <div className="space-y-12">
+                    <div className="space-y-6">
+                       <Badge variant="outline" className="rounded-full px-4 py-1 border-primary/20 text-primary bg-primary/5 font-black uppercase tracking-widest">Process</Badge>
+                       <h2 className="text-5xl lg:text-7xl font-black tracking-tighter leading-[0.9]">How <br /><span className="text-primary italic font-serif">Healthyfy</span> works.</h2>
+                    </div>
+
+                    <div className="space-y-2">
+                       {[
+                         { title: "Select Specialist", desc: "Choose from 500+ verified doctors across India.", icon: Search },
+                         { title: "Digital Consult", icon: Smartphone, desc: "Secure HD video calls and 24/7 instant chat support." },
+                         { title: "Care Continuity", icon: HeartPulse, desc: "Proactive follow-ups and AI-powered health monitoring." }
+                       ].map((step, i) => (
+                         <div 
+                           key={step.title}
+                           onClick={() => setActiveStep(i)}
+                           className={`p-8 rounded-[2rem] cursor-pointer transition-all border ${activeStep === i ? 'bg-background border-primary shadow-xl' : 'border-transparent hover:bg-background/50 opacity-60'}`}
+                         >
+                            <div className="flex gap-6 items-start">
+                               <div className={`h-12 w-12 rounded-xl flex items-center justify-center flex-shrink-0 ${activeStep === i ? 'bg-primary text-primary-foreground shadow-lg' : 'bg-muted text-muted-foreground'}`}>
+                                  <step.icon className="h-6 w-6" />
+                               </div>
+                               <div>
+                                  <h3 className={`text-xl font-black mb-2 ${activeStep === i ? 'text-foreground' : 'text-muted-foreground'}`}>0{i+1}. {step.title}</h3>
+                                  <p className="text-sm text-muted-foreground font-medium leading-relaxed">{step.desc}</p>
+                               </div>
+                            </div>
+                         </div>
+                       ))}
+                    </div>
+                 </div>
+
+                 <div className="relative lg:h-[700px] flex items-center justify-center">
+                    <AnimatePresence mode="wait">
+                       <motion.div 
+                         key={activeStep}
+                         initial={{ opacity: 0, scale: 0.8, rotate: -5 }}
+                         animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                         exit={{ opacity: 0, scale: 0.8, rotate: 5 }}
+                         transition={{ duration: 0.5, type: "spring" }}
+                         className="relative z-10 w-full max-w-[500px] aspect-[4/5] rounded-[3rem] overflow-hidden shadow-[0_50px_100px_-20px_rgba(0,0,0,0.3)] border-8 border-background bg-muted"
+                       >
+                          <Image 
+                            src={[
+                              "https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&q=80&w=800",
+                              "https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=800",
+                              "https://images.unsplash.com/photo-1505751172876-fa1923c5c528?auto=format&fit=crop&q=80&w=800"
+                            ][activeStep]} 
+                            alt="Process" 
+                            fill 
+                            className="object-cover" 
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                          <div className="absolute bottom-10 left-10 right-10">
+                             <div className="p-6 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20">
+                                <p className="text-white font-black uppercase text-xs tracking-widest mb-2">Step Details</p>
+                                <p className="text-white/80 text-sm font-medium italic">
+                                   {[
+                                     "Advanced search algorithms to match you with the right specialist based on symptoms and language preferences.",
+                                     "End-to-end encrypted video platform that works even on low-bandwidth connections for seamless care.",
+                                     "Integrated health dashboard that combines your vitals, prescriptions, and AI insights in one secure location."
+                                   ][activeStep]}
+                                </p>
+                             </div>
+                          </div>
+                       </motion.div>
+                    </AnimatePresence>
+                    
+                    {/* Floating Orbs for the step section */}
+                    <motion.div 
+                      animate={{ scale: [1, 1.2, 1], rotate: [0, 90, 0] }}
+                      transition={{ duration: 15, repeat: Infinity }}
+                      className="absolute -top-20 -right-20 h-80 w-80 bg-primary/10 rounded-full blur-[100px] -z-10"
+                    />
+                 </div>
+              </div>
+           </div>
+        </section>
+
+        {/* CTA with Creative Perspective */}
+        <section className="container py-24 lg:py-40">
+           <motion.div 
+             whileHover={{ scale: 1.01 }}
+             className="relative rounded-[4rem] bg-foreground text-background overflow-hidden p-12 lg:p-32 text-center"
+           >
+              <div className="absolute inset-0 pointer-events-none opacity-20 [background-image:linear-gradient(45deg,rgba(255,255,255,0.05)_25%,transparent_25%,transparent_50%,rgba(255,255,255,0.05)_50%,rgba(255,255,255,0.05)_75%,transparent_75%,transparent)] [background-size:40px_40px]" />
+              
+              <div className="relative z-10 space-y-12 max-w-3xl mx-auto">
+                 <Badge className="bg-primary text-foreground border-none font-black uppercase tracking-[0.2em] px-6 py-2">Join the revolution</Badge>
+                 <h2 className="text-6xl lg:text-8xl font-black tracking-tighter leading-[0.8]">
+                    Ready to live <br /><span className="text-primary italic font-serif">differently?</span>
+                 </h2>
+                 <p className="text-xl lg:text-2xl text-background/60 font-medium leading-relaxed">
+                   Join 75,000+ modern families who have taken control of their health. The first step is just a click away.
+                 </p>
+                 <div className="flex flex-wrap justify-center gap-6 pt-6">
+                    <Button size="lg" className="rounded-full px-12 h-16 text-xl font-black bg-primary text-foreground hover:scale-110 active:scale-95 transition-all shadow-2xl shadow-primary/40" asChild>
+                       <Link href="/signup">Get Started Now</Link>
+                    </Button>
+                    <Button variant="outline" size="lg" className="rounded-full px-12 h-16 text-xl font-black border-background/20 text-background hover:bg-background/10 backdrop-blur-sm">
+                       Our Story
+                    </Button>
+                 </div>
+              </div>
+
+              {/* Decorative Floating Shapes in CTA */}
+              <motion.div 
+                animate={{ rotate: 360 }}
+                transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                className="absolute -top-20 -left-20 h-64 w-64 border-2 border-primary/20 rounded-[3rem]"
+              />
+              <motion.div 
+                animate={{ rotate: -360 }}
+                transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
+                className="absolute -bottom-20 -right-20 h-64 w-64 border-2 border-primary/20 rounded-full"
+              />
+           </motion.div>
         </section>
       </main>
 
-      <footer className="border-t border-border/40 bg-muted/30 pt-20 pb-10">
-        <div className="container grid gap-12 lg:grid-cols-4 mb-16">
-          <div className="lg:col-span-2 space-y-6">
-            <Link href={"/" as Route} className="flex items-center gap-2.5">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-                <HeartPulse className="h-5 w-5" />
+      <footer className="border-t border-border/40 bg-background/50 backdrop-blur-md pt-32 pb-16 relative overflow-hidden">
+        <div className="container relative z-10">
+          <div className="grid gap-20 lg:grid-cols-4 mb-24">
+            <div className="lg:col-span-2 space-y-10">
+              <Link href="/" className="flex items-center gap-3">
+                <div className="h-12 w-12 rounded-2xl bg-primary text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/20">
+                  <HeartPulse className="h-7 w-7" />
+                </div>
+                <span className="text-2xl font-black tracking-tight">Healthyfy</span>
+              </Link>
+              <p className="max-w-md text-xl text-muted-foreground font-medium leading-relaxed">
+                We&apos;re building the infrastructure for a healthier world. One consultation, one AI insight, and one family at a time.
+              </p>
+              <div className="flex gap-4">
+                 {[MessageCircle, Shield, Smartphone, Activity].map((Icon, i) => (
+                   <motion.div 
+                    key={i}
+                    whileHover={{ y: -5, scale: 1.1 }}
+                    className="h-12 w-12 rounded-2xl bg-muted/50 border border-border flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-all cursor-pointer shadow-sm"
+                   >
+                      <Icon className="h-5 w-5" />
+                   </motion.div>
+                 ))}
               </div>
-              <span className="text-xl font-bold tracking-tight">Healthyfy</span>
-            </Link>
-            <p className="max-w-md text-muted-foreground leading-relaxed">
-              Healthyfy is reimagining healthcare for the digital age. We provide families with the tools and expertise needed to live healthier, longer lives.
-            </p>
-            <div className="flex gap-4">
-               {[1, 2, 3, 4].map((i) => (
-                 <div key={i} className="h-10 w-10 rounded-full bg-background border border-border/60 flex items-center justify-center hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all cursor-pointer">
-                    <Smartphone className="h-4 w-4" />
-                 </div>
-               ))}
+            </div>
+            
+            <div className="grid grid-cols-2 lg:col-span-2 gap-10">
+               <div className="space-y-8">
+                  <h4 className="text-sm font-black uppercase tracking-widest text-primary">Explore</h4>
+                  <ul className="space-y-5 text-lg font-bold">
+                    <li><Link href="#" className="text-muted-foreground hover:text-primary transition-colors">Our Platform</Link></li>
+                    <li><Link href="#" className="text-muted-foreground hover:text-primary transition-colors">Specialists</Link></li>
+                    <li><Link href="#" className="text-muted-foreground hover:text-primary transition-colors">Enterprise</Link></li>
+                    <li><Link href="#" className="text-muted-foreground hover:text-primary transition-colors">Pricing</Link></li>
+                  </ul>
+               </div>
+               <div className="space-y-8">
+                  <h4 className="text-sm font-black uppercase tracking-widest text-primary">Company</h4>
+                  <ul className="space-y-5 text-lg font-bold">
+                    <li><Link href="#" className="text-muted-foreground hover:text-primary transition-colors">About Us</Link></li>
+                    <li><Link href="#" className="text-muted-foreground hover:text-primary transition-colors">Careers</Link></li>
+                    <li><Link href="#" className="text-muted-foreground hover:text-primary transition-colors">Blog</Link></li>
+                    <li><Link href="#" className="text-muted-foreground hover:text-primary transition-colors">Contact</Link></li>
+                  </ul>
+               </div>
             </div>
           </div>
-          <div>
-            <h4 className="font-bold mb-6">Company</h4>
-            <ul className="space-y-4 text-sm text-muted-foreground">
-              <li><a href="#" className="hover:text-primary transition-colors">About Us</a></li>
-              <li><a href="#doctors" className="hover:text-primary transition-colors">Our Doctors</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Careers</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Press</a></li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="font-bold mb-6">Support</h4>
-            <ul className="space-y-4 text-sm text-muted-foreground">
-              <li><a href="#" className="hover:text-primary transition-colors">Help Center</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Privacy Policy</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Terms of Service</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Contact Us</a></li>
-            </ul>
+          
+          <div className="pt-10 border-t border-border/40 flex flex-col md:flex-row justify-between items-center gap-8 text-sm font-bold text-muted-foreground uppercase tracking-widest">
+            <p>© {new Date().getFullYear()} Healthyfy Technologies Inc.</p>
+            <div className="flex gap-10">
+               <Link href="#" className="hover:text-primary transition-colors">Privacy</Link>
+               <Link href="#" className="hover:text-primary transition-colors">Terms</Link>
+               <Link href="#" className="hover:text-primary transition-colors">Cookies</Link>
+            </div>
           </div>
         </div>
-        <div className="container pt-8 border-t border-border/40 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-muted-foreground font-medium">
-          <p>© {new Date().getFullYear()} Healthyfy Inc. All rights reserved.</p>
-          <div className="flex gap-8">
-             <span>Made with ❤️ for a healthier world</span>
-          </div>
-        </div>
+        
+        {/* Background Accent for footer */}
+        <div className="absolute -bottom-40 -right-40 h-80 w-80 bg-primary/10 rounded-full blur-[120px]" />
       </footer>
     </div>
   );

@@ -20,12 +20,18 @@ export interface ProviderDashboardSnapshot {
   providerName: string;
   categoryName: string;
   todayAppointments: number;
+  totalPatients: number;
   priorityPatients: number;
   queueCount: number;
+  followUpsDue: number;
+  completionRate: number;
   unreadMessages: number;
   reportsCount: number;
   appointmentStatus: Array<{ name: string; value: number }>;
   upcomingSchedule: Array<{ label: string; appointments: number }>;
+  patientPriorityMix: Array<{ name: string; value: number }>;
+  monthlyConsultations: Array<{ label: string; consultations: number }>;
+  topConditions: Array<{ label: string; patients: number }>;
   vitals: Array<{
     recorded_at: string;
     heart_rate: number | null;
@@ -110,7 +116,7 @@ export interface SoapNoteRecord {
 type ProviderDashboardRow = { user_id: string; category_id: string | null };
 type ProviderUserRow = { full_name: string | null };
 type ProviderAppointmentRow = { id?: string; patient_id: string; start_time: string; status: string };
-type ProviderPriorityRow = { user_id: string; priority: string | null };
+type ProviderPriorityRow = { user_id: string; priority: string | null; condition_summary?: string | null };
 type ProviderCategoryRow = { name: string | null };
 type ProviderVitalRow = {
   recorded_at: string;
@@ -187,6 +193,293 @@ function writeDemoProviderProfile(profile: ProviderProfileDetails) {
   }
 }
 
+const DEFAULT_DEMO_PROVIDER_PATIENTS: ProviderPatientListItem[] = [
+  {
+    id: "demo-patient-1",
+    name: "Jhanvi Patel",
+    age: 29,
+    last_visit: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(),
+    condition: "Routine follow-up",
+    priority: "medium",
+    next_appointment: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString()
+  },
+  {
+    id: "demo-patient-2",
+    name: "Rahul Mehta",
+    age: 41,
+    last_visit: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5).toISOString(),
+    condition: "Hypertension support",
+    priority: "high",
+    next_appointment: new Date(Date.now() + 1000 * 60 * 60 * 30).toISOString()
+  },
+  {
+    id: "demo-patient-3",
+    name: "Nisha Shah",
+    age: 35,
+    last_visit: new Date(Date.now() - 1000 * 60 * 60 * 24 * 8).toISOString(),
+    condition: "Cardiac risk screening",
+    priority: "normal",
+    next_appointment: new Date(Date.now() + 1000 * 60 * 60 * 54).toISOString()
+  },
+  {
+    id: "demo-patient-4",
+    name: "Karan Joshi",
+    age: 52,
+    last_visit: new Date(Date.now() - 1000 * 60 * 60 * 24 * 12).toISOString(),
+    condition: "Medication adjustment",
+    priority: "high",
+    next_appointment: new Date(Date.now() + 1000 * 60 * 60 * 72).toISOString()
+  },
+  {
+    id: "demo-patient-5",
+    name: "Meera Iyer",
+    age: 47,
+    last_visit: new Date(Date.now() - 1000 * 60 * 60 * 24 * 16).toISOString(),
+    condition: "Post-operative follow-up",
+    priority: "medium",
+    next_appointment: new Date(Date.now() + 1000 * 60 * 60 * 96).toISOString()
+  },
+  {
+    id: "demo-patient-6",
+    name: "Arjun Desai",
+    age: 61,
+    last_visit: new Date(Date.now() - 1000 * 60 * 60 * 24 * 20).toISOString(),
+    condition: "Diabetes and BP review",
+    priority: "normal",
+    next_appointment: new Date(Date.now() + 1000 * 60 * 60 * 120).toISOString()
+  }
+];
+
+function buildDefaultDemoProviderAppointments(): ProviderAppointment[] {
+  const now = Date.now();
+  return [
+    {
+      id: "demo-provider-appointment-1",
+      patient_id: "demo-patient-1",
+      patient_name: "Jhanvi Patel",
+      start_time: new Date(now + 1000 * 60 * 60 * 24).toISOString(),
+      end_time: new Date(now + 1000 * 60 * 90 + 1000 * 60 * 60 * 24).toISOString(),
+      status: "confirmed",
+      reason: "Routine follow-up consultation",
+      meeting_url: null
+    },
+    {
+      id: "demo-provider-appointment-2",
+      patient_id: "demo-patient-2",
+      patient_name: "Rahul Mehta",
+      start_time: new Date(now + 1000 * 60 * 60 * 48).toISOString(),
+      end_time: new Date(now + 1000 * 60 * 90 + 1000 * 60 * 60 * 48).toISOString(),
+      status: "pending",
+      reason: "Blood pressure review",
+      meeting_url: null
+    },
+    {
+      id: "demo-provider-appointment-3",
+      patient_id: "demo-patient-3",
+      patient_name: "Nisha Shah",
+      start_time: new Date(now + 1000 * 60 * 60 * 72).toISOString(),
+      end_time: new Date(now + 1000 * 60 * 90 + 1000 * 60 * 60 * 72).toISOString(),
+      status: "confirmed",
+      reason: "Preventive cardiac screening",
+      meeting_url: null
+    },
+    {
+      id: "demo-provider-appointment-4",
+      patient_id: "demo-patient-4",
+      patient_name: "Karan Joshi",
+      start_time: new Date(now - 1000 * 60 * 60 * 24 * 3).toISOString(),
+      end_time: new Date(now - 1000 * 60 * 60 * 24 * 3 + 1000 * 60 * 30).toISOString(),
+      status: "completed",
+      reason: "Medication titration review",
+      meeting_url: null
+    },
+    {
+      id: "demo-provider-appointment-5",
+      patient_id: "demo-patient-5",
+      patient_name: "Meera Iyer",
+      start_time: new Date(now - 1000 * 60 * 60 * 24 * 6).toISOString(),
+      end_time: new Date(now - 1000 * 60 * 60 * 24 * 6 + 1000 * 60 * 30).toISOString(),
+      status: "completed",
+      reason: "Recovery follow-up",
+      meeting_url: null
+    },
+    {
+      id: "demo-provider-appointment-6",
+      patient_id: "demo-patient-6",
+      patient_name: "Arjun Desai",
+      start_time: new Date(now + 1000 * 60 * 60 * 144).toISOString(),
+      end_time: new Date(now + 1000 * 60 * 90 + 1000 * 60 * 60 * 144).toISOString(),
+      status: "confirmed",
+      reason: "Diabetes and hypertension review",
+      meeting_url: null
+    }
+  ].sort((a, b) => a.start_time.localeCompare(b.start_time));
+}
+
+function buildDemoPatientProfile(patientId: string): ProviderPatientProfile {
+  const patient = DEFAULT_DEMO_PROVIDER_PATIENTS.find((item) => item.id === patientId);
+  const appointments = buildDefaultDemoProviderAppointments()
+    .filter((appointment) => appointment.patient_id === patientId)
+    .map((appointment) => ({
+      id: appointment.id,
+      start_time: appointment.start_time,
+      status: appointment.status,
+      reason: appointment.reason
+    }));
+
+  const profiles: Record<string, Omit<ProviderPatientProfile, "id" | "name" | "age" | "consultations">> = {
+    "demo-patient-1": {
+      summary: "Recovering well after last tele-consultation with improved lifestyle adherence.",
+      medicalHistory: "Mild palpitations, vitamin D deficiency, family history of hypertension.",
+      vitals: [
+        { recorded_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 18).toISOString(), heart_rate: 82, systolic_bp: 122, diastolic_bp: 81, weight: 63, glucose: 95 },
+        { recorded_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 9).toISOString(), heart_rate: 78, systolic_bp: 118, diastolic_bp: 79, weight: 62, glucose: 92 },
+        { recorded_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(), heart_rate: 75, systolic_bp: 117, diastolic_bp: 77, weight: 62, glucose: 91 }
+      ],
+      documents: [
+        { id: "demo-doc-1", title: "CBC and thyroid panel", uploaded_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 14).toISOString(), file_path: "/demo/cbc-thyroid.pdf" },
+        { id: "demo-doc-2", title: "ECG summary", uploaded_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 4).toISOString(), file_path: "/demo/ecg-summary.pdf" }
+      ]
+    },
+    "demo-patient-2": {
+      summary: "Needs tighter BP monitoring with evening medication adherence.",
+      medicalHistory: "Stage 1 hypertension, borderline cholesterol, sedentary routine.",
+      vitals: [
+        { recorded_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 21).toISOString(), heart_rate: 88, systolic_bp: 138, diastolic_bp: 90, weight: 79, glucose: 105 },
+        { recorded_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 10).toISOString(), heart_rate: 84, systolic_bp: 134, diastolic_bp: 88, weight: 78, glucose: 102 },
+        { recorded_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3).toISOString(), heart_rate: 80, systolic_bp: 129, diastolic_bp: 84, weight: 77, glucose: 99 }
+      ],
+      documents: [
+        { id: "demo-doc-3", title: "Ambulatory BP report", uploaded_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 11).toISOString(), file_path: "/demo/bp-report.pdf" }
+      ]
+    },
+    "demo-patient-3": {
+      summary: "Preventive screening case with no acute symptoms and positive lifestyle changes.",
+      medicalHistory: "Family history of CAD, occasional migraines.",
+      vitals: [
+        { recorded_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 15).toISOString(), heart_rate: 76, systolic_bp: 116, diastolic_bp: 76, weight: 58, glucose: 90 },
+        { recorded_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5).toISOString(), heart_rate: 73, systolic_bp: 114, diastolic_bp: 75, weight: 58, glucose: 89 }
+      ],
+      documents: [
+        { id: "demo-doc-4", title: "Lipid profile", uploaded_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 9).toISOString(), file_path: "/demo/lipid-profile.pdf" }
+      ]
+    },
+    "demo-patient-4": {
+      summary: "Recent medication changes need monitoring for tolerance and response.",
+      medicalHistory: "Longstanding hypertension, sleep disturbance.",
+      vitals: [
+        { recorded_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 12).toISOString(), heart_rate: 90, systolic_bp: 142, diastolic_bp: 92, weight: 82, glucose: 110 },
+        { recorded_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(), heart_rate: 84, systolic_bp: 132, diastolic_bp: 86, weight: 81, glucose: 104 }
+      ],
+      documents: [
+        { id: "demo-doc-5", title: "Medication adherence notes", uploaded_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 1).toISOString(), file_path: "/demo/medication-notes.pdf" }
+      ]
+    },
+    "demo-patient-5": {
+      summary: "Recovering steadily with no red-flag symptoms after discharge.",
+      medicalHistory: "Post-operative review, iron supplementation.",
+      vitals: [
+        { recorded_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7).toISOString(), heart_rate: 79, systolic_bp: 120, diastolic_bp: 80, weight: 66, glucose: 96 }
+      ],
+      documents: [
+        { id: "demo-doc-6", title: "Discharge summary", uploaded_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 13).toISOString(), file_path: "/demo/discharge-summary.pdf" }
+      ]
+    },
+    "demo-patient-6": {
+      summary: "Metabolic review patient with improving glucose control.",
+      medicalHistory: "Type 2 diabetes, hypertension, dietary counseling in progress.",
+      vitals: [
+        { recorded_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 16).toISOString(), heart_rate: 86, systolic_bp: 130, diastolic_bp: 84, weight: 84, glucose: 138 },
+        { recorded_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 4).toISOString(), heart_rate: 82, systolic_bp: 126, diastolic_bp: 82, weight: 83, glucose: 126 }
+      ],
+      documents: [
+        { id: "demo-doc-7", title: "HbA1c trend report", uploaded_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 6).toISOString(), file_path: "/demo/hba1c-report.pdf" }
+      ]
+    }
+  };
+
+  const fallback = profiles[patientId] ?? profiles["demo-patient-1"];
+
+  return {
+    id: patientId,
+    name: patient?.name ?? "Patient",
+    age: patient?.age ?? null,
+    summary: fallback.summary,
+    medicalHistory: fallback.medicalHistory,
+    vitals: fallback.vitals,
+    documents: fallback.documents,
+    consultations: appointments
+  };
+}
+
+function buildDefaultDemoSoapNotes(): SoapNoteRecord[] {
+  const now = new Date();
+  return [
+    {
+      id: "demo-soap-seed-1",
+      appointment_id: "demo-provider-appointment-4",
+      patient_id: "demo-patient-4",
+      provider_id: "demo-provider-1",
+      subjective: "Patient reports improved sleep and fewer dizziness episodes after medication adjustment.",
+      objective: "Home BP log trending down; no acute distress during video follow-up.",
+      assessment: "Responding to dose adjustment with partial BP improvement.",
+      plan: "Continue current medication for 2 weeks, maintain BP diary, repeat follow-up next week.",
+      created_at: new Date(now.getTime() - 1000 * 60 * 60 * 30).toISOString(),
+      updated_at: new Date(now.getTime() - 1000 * 60 * 60 * 26).toISOString()
+    },
+    {
+      id: "demo-soap-seed-2",
+      appointment_id: "demo-provider-appointment-5",
+      patient_id: "demo-patient-5",
+      provider_id: "demo-provider-1",
+      subjective: "Patient feels stronger, walking daily, mild soreness only with exertion.",
+      objective: "Incision recovery discussed from discharge notes; no fever or swelling reported.",
+      assessment: "Post-operative recovery progressing as expected.",
+      plan: "Continue wound care, hydration, and repeat CBC if fatigue worsens.",
+      created_at: new Date(now.getTime() - 1000 * 60 * 60 * 54).toISOString(),
+      updated_at: new Date(now.getTime() - 1000 * 60 * 60 * 48).toISOString()
+    }
+  ];
+}
+
+function buildDefaultDemoMessages(): DemoMessageRecord[] {
+  const now = Date.now();
+  return [
+    {
+      id: "demo-message-1",
+      sender_id: "demo-provider-1",
+      recipient_id: "demo-patient-1",
+      conversation_id: "demo-conversation-demo-provider-appointment-1",
+      content: "Please upload your latest ECG before tomorrow's review.",
+      created_at: new Date(now - 1000 * 60 * 60 * 8).toISOString()
+    },
+    {
+      id: "demo-message-2",
+      sender_id: "demo-patient-1",
+      recipient_id: "demo-provider-1",
+      conversation_id: "demo-conversation-demo-provider-appointment-1",
+      content: "Sure doctor, I have uploaded it and noted the symptoms from this week.",
+      created_at: new Date(now - 1000 * 60 * 60 * 7).toISOString()
+    },
+    {
+      id: "demo-message-3",
+      sender_id: "demo-provider-1",
+      recipient_id: "demo-patient-2",
+      conversation_id: "demo-conversation-demo-provider-appointment-2",
+      content: "Keep checking your evening blood pressure and avoid skipping your dose tonight.",
+      created_at: new Date(now - 1000 * 60 * 60 * 5).toISOString()
+    },
+    {
+      id: "demo-message-4",
+      sender_id: "demo-patient-2",
+      recipient_id: "demo-provider-1",
+      conversation_id: "demo-conversation-demo-provider-appointment-2",
+      content: "Understood. I will send today's readings before the consultation.",
+      created_at: new Date(now - 1000 * 60 * 60 * 4).toISOString()
+    }
+  ];
+}
+
 function buildDemoProviderDashboard(): ProviderDashboardSnapshot {
   const demoProfile = readDemoProviderProfile();
   const today = new Date();
@@ -195,8 +488,11 @@ function buildDemoProviderDashboard(): ProviderDashboardSnapshot {
     providerName: demoProfile.name,
     categoryName: demoProfile.categoryId === "demo-cardiology" ? "Cardiology" : "General Medicine",
     todayAppointments: 6,
+    totalPatients: 24,
     priorityPatients: 3,
     queueCount: 4,
+    followUpsDue: 7,
+    completionRate: 82,
     unreadMessages: 5,
     reportsCount: 12,
     appointmentStatus: [
@@ -213,6 +509,25 @@ function buildDemoProviderDashboard(): ProviderDashboardSnapshot {
         appointments: [4, 6, 5, 7, 3, 4, 2][index] ?? 0
       };
     }),
+    patientPriorityMix: [
+      { name: "High", value: 3 },
+      { name: "Medium", value: 7 },
+      { name: "Normal", value: 14 }
+    ],
+    monthlyConsultations: [
+      { label: "Oct", consultations: 18 },
+      { label: "Nov", consultations: 22 },
+      { label: "Dec", consultations: 19 },
+      { label: "Jan", consultations: 27 },
+      { label: "Feb", consultations: 24 },
+      { label: "Mar", consultations: 31 }
+    ],
+    topConditions: [
+      { label: "Hypertension follow-up", patients: 8 },
+      { label: "Post-consultation review", patients: 6 },
+      { label: "Cardiac risk screening", patients: 5 },
+      { label: "Medication adjustment", patients: 4 }
+    ],
     vitals: [
       { recorded_at: new Date(today.getTime() - 86400000 * 4).toISOString(), heart_rate: 76, systolic_bp: 118, diastolic_bp: 78, weight: 68, glucose: 96 },
       { recorded_at: new Date(today.getTime() - 86400000 * 3).toISOString(), heart_rate: 82, systolic_bp: 124, diastolic_bp: 80, weight: 71, glucose: 101 },
@@ -224,28 +539,7 @@ function buildDemoProviderDashboard(): ProviderDashboardSnapshot {
 }
 
 function buildDemoProviderPatients(): ProviderPatientListItem[] {
-  const now = Date.now();
-
-  return [
-    {
-      id: "demo-patient-1",
-      name: "Jhanvi Patel",
-      age: 29,
-      last_visit: new Date(now - 1000 * 60 * 60 * 24 * 2).toISOString(),
-      condition: "Routine follow-up",
-      priority: "medium",
-      next_appointment: new Date(now + 1000 * 60 * 60 * 24).toISOString()
-    },
-    {
-      id: "demo-patient-2",
-      name: "Rahul Mehta",
-      age: 41,
-      last_visit: new Date(now - 1000 * 60 * 60 * 24 * 5).toISOString(),
-      condition: "Hypertension support",
-      priority: "high",
-      next_appointment: new Date(now + 1000 * 60 * 60 * 30).toISOString()
-    }
-  ];
+  return DEFAULT_DEMO_PROVIDER_PATIENTS;
 }
 
 function readDemoBookings() {
@@ -289,36 +583,14 @@ function buildDemoProviderAppointments(providerId: string): ProviderAppointment[
     return demoAppointments.sort((a, b) => a.start_time.localeCompare(b.start_time));
   }
 
-  const now = Date.now();
-  return [
-    {
-      id: "demo-provider-appointment-1",
-      patient_id: "demo-patient-1",
-      patient_name: "Jhanvi Patel",
-      start_time: new Date(now + 1000 * 60 * 60 * 24).toISOString(),
-      end_time: new Date(now + 1000 * 60 * 90 * 24 / 24).toISOString(),
-      status: "confirmed",
-      reason: "Follow-up consultation",
-      meeting_url: null
-    },
-    {
-      id: "demo-provider-appointment-2",
-      patient_id: "demo-patient-2",
-      patient_name: "Rahul Mehta",
-      start_time: new Date(now + 1000 * 60 * 60 * 48).toISOString(),
-      end_time: new Date(now + 1000 * 60 * 90 + 1000 * 60 * 60 * 48).toISOString(),
-      status: "pending",
-      reason: "Blood pressure review",
-      meeting_url: null
-    }
-  ].sort((a, b) => a.start_time.localeCompare(b.start_time));
+  return buildDefaultDemoProviderAppointments();
 }
 
 function readDemoSoapNotes(): SoapNoteRecord[] {
   if (typeof localStorage === "undefined") return [];
 
   const raw = localStorage.getItem(DEMO_SOAP_NOTES_KEY);
-  if (!raw) return [];
+  if (!raw) return buildDefaultDemoSoapNotes();
 
   try {
     return JSON.parse(raw) as SoapNoteRecord[];
@@ -346,7 +618,7 @@ function readDemoMessages(): DemoMessageRecord[] {
   if (typeof localStorage === "undefined") return [];
 
   const raw = localStorage.getItem(DEMO_MESSAGES_KEY);
-  if (!raw) return [];
+  if (!raw) return buildDefaultDemoMessages();
 
   try {
     return JSON.parse(raw) as DemoMessageRecord[];
@@ -587,7 +859,7 @@ export async function fetchProviderDashboard(): Promise<ProviderDashboardSnapsho
   const [patientRows, categoryRow] = await Promise.all([
     appointmentPatientIds.length
       ? withTimeout(
-          Promise.resolve(supabase.from("patients").select("user_id, priority").in("user_id", appointmentPatientIds)),
+          Promise.resolve(supabase.from("patients").select("user_id, priority, condition_summary").in("user_id", appointmentPatientIds)),
           "provider patient priorities"
         ).then((result) => (result.data ?? []) as ProviderPriorityRow[]).catch(() => [])
       : Promise.resolve([] as ProviderPriorityRow[]),
@@ -601,13 +873,23 @@ export async function fetchProviderDashboard(): Promise<ProviderDashboardSnapsho
 
   const today = new Date();
   const todayDate = today.toISOString().slice(0, 10);
+  const nowMs = today.getTime();
   const todayAppointments = appointments.filter((a) => a.start_time.slice(0, 10) === todayDate).length;
+  const totalPatients = appointmentPatientIds.length;
 
   const priorityPatients = patientRows.filter(
     (p) => p.priority?.toLowerCase() === "high"
   ).length;
 
   const queueCount = appointments.filter((a) => ["pending", "confirmed"].includes(a.status)).length;
+  const followUpsDue = appointments.filter((appointment) => {
+    if (!["pending", "confirmed"].includes(appointment.status)) return false;
+    const startMs = new Date(appointment.start_time).getTime();
+    const diffMs = startMs - nowMs;
+    return diffMs >= 0 && diffMs <= 1000 * 60 * 60 * 24 * 3;
+  }).length;
+  const completedAppointments = appointments.filter((a) => a.status === "completed").length;
+  const completionRate = appointments.length ? Math.round((completedAppointments / appointments.length) * 100) : 0;
   const appointmentStatus = [
     { name: "Pending", value: appointments.filter((a) => a.status === "pending").length },
     { name: "Confirmed", value: appointments.filter((a) => a.status === "confirmed").length },
@@ -627,6 +909,32 @@ export async function fetchProviderDashboard(): Promise<ProviderDashboardSnapsho
     };
   });
 
+  const patientPriorityMix = [
+    { name: "High", value: patientRows.filter((row) => row.priority?.toLowerCase() === "high").length },
+    { name: "Medium", value: patientRows.filter((row) => row.priority?.toLowerCase() === "medium").length },
+    { name: "Normal", value: patientRows.filter((row) => !row.priority || row.priority.toLowerCase() === "normal").length }
+  ];
+
+  const monthlyConsultations = Array.from({ length: 6 }, (_, index) => {
+    const monthDate = new Date(today.getFullYear(), today.getMonth() - (5 - index), 1);
+    const monthKey = `${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, "0")}`;
+    return {
+      label: monthDate.toLocaleDateString([], { month: "short" }),
+      consultations: appointments.filter((appointment) => appointment.start_time.slice(0, 7) === monthKey).length
+    };
+  });
+
+  const topConditions = Object.entries(
+    patientRows.reduce<Record<string, number>>((acc, row) => {
+      const label = row.condition_summary?.trim() || "General follow-up";
+      acc[label] = (acc[label] ?? 0) + 1;
+      return acc;
+    }, {})
+  )
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 4)
+    .map(([label, patients]) => ({ label, patients }));
+
   const vitals = await withTimeout(
     Promise.resolve(supabase
       .from("vital_signs")
@@ -641,12 +949,18 @@ export async function fetchProviderDashboard(): Promise<ProviderDashboardSnapsho
     providerName: userRow?.full_name ?? "Doctor",
     categoryName: categoryRow?.name ?? "General",
     todayAppointments,
+    totalPatients,
     priorityPatients,
     queueCount,
+    followUpsDue,
+    completionRate,
     unreadMessages: msgRows.length,
     reportsCount: docs.length,
     appointmentStatus,
     upcomingSchedule,
+    patientPriorityMix,
+    monthlyConsultations,
+    topConditions,
     vitals: vitals.reverse()
   };
 }
@@ -707,6 +1021,10 @@ export async function fetchProviderPatients(): Promise<ProviderPatientListItem[]
 }
 
 export async function fetchProviderPatientProfile(patientId: string): Promise<ProviderPatientProfile> {
+  if (patientId.startsWith("demo-")) {
+    return buildDemoPatientProfile(patientId);
+  }
+
   const [{ data: user }, { data: patient }, { data: vitals }, { data: docs }, { data: visits }] = await Promise.all([
     supabase.from("users").select("id, full_name").eq("id", patientId).single(),
     supabase

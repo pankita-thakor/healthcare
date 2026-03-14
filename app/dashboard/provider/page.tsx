@@ -35,15 +35,21 @@ export default function ProviderDashboardPage() {
         <p className="text-sm text-muted-foreground">{data.categoryName} Specialist Dashboard</p>
       </section>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <MetricsCard title="Today's Appointments" value={String(data.todayAppointments)} change="Today" />
+        <MetricsCard title="Active Patients" value={String(data.totalPatients)} change="Under care" />
         <MetricsCard title="Priority Patients" value={String(data.priorityPatients)} change="Attention" />
-        <MetricsCard title="Consultation Queue" value={String(data.queueCount)} change="Live" />
+        <MetricsCard title="Completion Rate" value={`${data.completionRate}%`} change="This cycle" />
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <MetricsCard title="Consultation Queue" value={String(data.queueCount)} change="Live" />
+        <MetricsCard title="Follow-ups Due" value={String(data.followUpsDue)} change="Next 3 days" />
         <MetricsCard title="Messages" value={String(data.unreadMessages)} change="Unread" />
         <MetricsCard title="Reports & Documents" value={String(data.reportsCount)} change="Files" />
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-[1.2fr,0.8fr]">
         <Card>
           <CardHeader>
             <CardTitle className="text-sm text-muted-foreground">Quick Actions</CardTitle>
@@ -51,6 +57,23 @@ export default function ProviderDashboardPage() {
           <CardContent className="flex gap-2">
             <Button asChild size="sm"><Link href="/dashboard/provider/schedule">Open schedule</Link></Button>
             <Button asChild size="sm" variant="outline"><Link href="/dashboard/provider/patients">View patients</Link></Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm text-muted-foreground">Top Patient Needs</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {data.topConditions.map((condition) => (
+              <div key={condition.label} className="flex items-center justify-between rounded-lg border px-3 py-2">
+                <div>
+                  <p className="text-sm font-medium">{condition.label}</p>
+                  <p className="text-xs text-muted-foreground">Patients requiring review</p>
+                </div>
+                <span className="text-lg font-semibold">{condition.patients}</span>
+              </div>
+            ))}
           </CardContent>
         </Card>
       </div>
@@ -63,6 +86,8 @@ export default function ProviderDashboardPage() {
           <ProviderDashboardGraphs
             statusData={data.appointmentStatus}
             scheduleData={data.upcomingSchedule}
+            priorityData={data.patientPriorityMix}
+            monthlyData={data.monthlyConsultations}
           />
         </CardContent>
       </Card>

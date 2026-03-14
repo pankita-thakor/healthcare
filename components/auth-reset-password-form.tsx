@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -13,6 +13,7 @@ export function ResetPasswordForm() {
   const [status, setStatus] = useState<string>("Validating reset link...");
   const [error, setError] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     async function initRecovery() {
@@ -32,6 +33,7 @@ export function ResetPasswordForm() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setStatus("");
 
     if (password.length < 8) {
       setError("Password must be at least 8 characters.");
@@ -44,11 +46,14 @@ export function ResetPasswordForm() {
     }
 
     try {
+      setSaving(true);
       await updatePassword(password);
       setStatus("Password updated. Redirecting to sign in...");
       setTimeout(() => router.push("/login"), 1000);
     } catch (err) {
       setError((err as Error).message || "Could not update password.");
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -61,7 +66,7 @@ export function ResetPasswordForm() {
         placeholder="New password"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
-        disabled={!ready}
+        disabled={!ready || saving}
         required
       />
       <Input
@@ -69,11 +74,11 @@ export function ResetPasswordForm() {
         placeholder="Confirm new password"
         value={confirmPassword}
         onChange={(e) => setConfirmPassword(e.target.value)}
-        disabled={!ready}
+        disabled={!ready || saving}
         required
       />
-      <Button type="submit" className="w-full" disabled={!ready}>
-        Update password
+      <Button type="submit" className="w-full" disabled={!ready || saving}>
+        {saving ? "Updating password..." : "Update password"}
       </Button>
     </form>
   );

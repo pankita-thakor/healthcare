@@ -19,7 +19,6 @@ function getDashboardPath(role: Role | null) {
   return "/dashboard";
 }
 
-1
 function getProfilePath(role: Role | null) {
   if (role === "patient") return "/dashboard/patient/profile";
   if (role === "provider") return "/dashboard/provider/profile";
