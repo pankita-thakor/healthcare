@@ -2,8 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence, useScroll, useTransform, useSpring } from "framer-motion";
+import { useState, useRef, type ReactNode } from "react";
 import {
   Activity,
   ArrowRight,
@@ -29,6 +28,62 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+
+type MotionShimProps = {
+  children?: ReactNode;
+  [key: string]: unknown;
+};
+
+function stripMotionProps(props: MotionShimProps) {
+  const {
+    initial,
+    animate,
+    exit,
+    transition,
+    whileHover,
+    whileInView,
+    whileTap,
+    variants,
+    layout,
+    layoutId,
+    viewport,
+    ...rest
+  } = props;
+
+  void initial;
+  void animate;
+  void exit;
+  void transition;
+  void whileHover;
+  void whileInView;
+  void whileTap;
+  void variants;
+  void layout;
+  void layoutId;
+  void viewport;
+
+  return rest;
+}
+
+const motion = {
+  div: ({ children, ...props }: MotionShimProps) => <div {...(stripMotionProps(props) as Record<string, unknown>)}>{children}</div>,
+  span: ({ children, ...props }: MotionShimProps) => (
+    <span {...(stripMotionProps(props) as Record<string, unknown>)}>{children}</span>
+  ),
+  li: ({ children, ...props }: MotionShimProps) => <li {...(stripMotionProps(props) as Record<string, unknown>)}>{children}</li>
+};
+
+function AnimatePresence({ children }: { children?: ReactNode; mode?: string }) {
+  return <>{children}</>;
+}
+
+function useScroll(_options?: unknown) {
+  return { scrollYProgress: 1 };
+}
+
+function useSpring<T>(value: T, _config?: unknown) {
+  return value;
+}
 
 const features = [
   {
