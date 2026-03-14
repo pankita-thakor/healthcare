@@ -5,10 +5,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
-const links = [
-  { href: "/dashboard/patient" as Route, label: "Patient" },
-  { href: "/dashboard/provider" as Route, label: "Provider" },
-  { href: "/dashboard/admin" as Route, label: "Admin" }
+const links: Array<{ href: Route; label: string }> = [
+  { href: "/dashboard/patient", label: "Patient" },
+  { href: "/dashboard/provider", label: "Provider" },
+  { href: "/dashboard/admin", label: "Admin" }
 ];
 
 export function DashboardNav() {
@@ -17,8 +17,8 @@ export function DashboardNav() {
     <nav className="flex gap-2">
       {links.map((link) => (
         <Link
-          key={link.href}
-          href={link.href}
+          key={String(link.href)}
+          href={link.href as Route}
           className={cn(
             "rounded-md px-3 py-2 text-sm",
             pathname === link.href ? "bg-primary text-primary-foreground" : "hover:bg-muted"
