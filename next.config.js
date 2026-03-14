@@ -1,10 +1,19 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    typedRoutes: true
-  },
   images: {
-    domains: ["i.pravatar.cc", "images.unsplash.com"]
+    domains: ["i.pravatar.cc", "images.unsplash.com"],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "i.pravatar.cc",
+        pathname: "/**"
+      },
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com",
+        pathname: "/**"
+      }
+    ]
   }
 };
 
