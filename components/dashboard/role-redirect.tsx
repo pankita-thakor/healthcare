@@ -1,6 +1,7 @@
-﻿"use client";
+"use client";
 
 import { useEffect } from "react";
+import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { useRole } from "@/hooks/use-role";
 
@@ -10,7 +11,7 @@ export function RoleRedirect() {
 
   useEffect(() => {
     if (!role) return;
-    router.replace(`/dashboard/${role}`);
+    router.replace(`/dashboard/${role}` as Route);
   }, [role, router]);
 
   return null;

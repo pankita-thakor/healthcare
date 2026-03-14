@@ -7,6 +7,8 @@ const supabase = createBrowserClient();
 const QUERY_TIMEOUT_MS = 8000;
 const DEMO_PROVIDER_PROFILE_KEY = "hf_demo_provider_profile";
 const DEMO_BOOKINGS_KEY = "hf_demo_bookings";
+const DEMO_SOAP_NOTES_KEY = "hf_demo_soap_notes";
+const DEMO_MESSAGES_KEY = "hf_demo_messages";
 
 export interface ProviderCategory {
   id: string;
@@ -90,6 +92,19 @@ export interface ProviderProfileDetails {
   hospital: string;
   bio: string;
   availability: string;
+}
+
+export interface SoapNoteRecord {
+  id: string;
+  appointment_id: string | null;
+  patient_id: string;
+  provider_id: string;
+  subjective: string;
+  objective: string;
+  assessment: string;
+  plan: string;
+  created_at: string;
+  updated_at: string;
 }
 
 type ProviderDashboardRow = { user_id: string; category_id: string | null };
@@ -297,6 +312,53 @@ function buildDemoProviderAppointments(providerId: string): ProviderAppointment[
       meeting_url: null
     }
   ].sort((a, b) => a.start_time.localeCompare(b.start_time));
+}
+
+function readDemoSoapNotes(): SoapNoteRecord[] {
+  if (typeof localStorage === "undefined") return [];
+
+  const raw = localStorage.getItem(DEMO_SOAP_NOTES_KEY);
+  if (!raw) return [];
+
+  try {
+    return JSON.parse(raw) as SoapNoteRecord[];
+  } catch {
+    localStorage.removeItem(DEMO_SOAP_NOTES_KEY);
+    return [];
+  }
+}
+
+function writeDemoSoapNotes(notes: SoapNoteRecord[]) {
+  if (typeof localStorage === "undefined") return;
+  localStorage.setItem(DEMO_SOAP_NOTES_KEY, JSON.stringify(notes));
+}
+
+type DemoMessageRecord = {
+  id: string;
+  sender_id: string;
+  recipient_id: string;
+  conversation_id: string;
+  content: string;
+  created_at: string;
+};
+
+function readDemoMessages(): DemoMessageRecord[] {
+  if (typeof localStorage === "undefined") return [];
+
+  const raw = localStorage.getItem(DEMO_MESSAGES_KEY);
+  if (!raw) return [];
+
+  try {
+    return JSON.parse(raw) as DemoMessageRecord[];
+  } catch {
+    localStorage.removeItem(DEMO_MESSAGES_KEY);
+    return [];
+  }
+}
+
+function writeDemoMessages(messages: DemoMessageRecord[]) {
+  if (typeof localStorage === "undefined") return;
+  localStorage.setItem(DEMO_MESSAGES_KEY, JSON.stringify(messages));
 }
 
 async function getCurrentUserId() {
@@ -841,6 +903,10 @@ export async function rescheduleAppointment(appointmentId: string, nextStartISO:
 }
 
 export async function ensureConsultationRoom(appointmentId: string): Promise<{ meetingUrl: string }> {
+  if (appointmentId.startsWith("demo-")) {
+    return { meetingUrl: "https://www.daily.co/healthyfy-demo-room" };
+  }
+
   const { data: existing, error } = await supabase
     .from("appointments")
     .select("id, meeting_url")
@@ -868,7 +934,37 @@ export async function ensureConsultationRoom(appointmentId: string): Promise<{ m
   return { meetingUrl: room.url as string };
 }
 
+export async function fetchSoapNotes(appointmentId: string) {
+  const providerId = await getCurrentUserId();
+
+  if (appointmentId.startsWith("demo-") || isDemoUserId(providerId)) {
+    return readDemoSoapNotes()
+      .filter((note) => note.appointment_id === appointmentId)
+      .sort((a, b) => b.updated_at.localeCompare(a.updated_at));
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("clinical_notes")
+      .select("id, appointment_id, patient_id, provider_id, subjective, objective, assessment, plan, created_at, updated_at")
+      .eq("appointment_id", appointmentId)
+      .order("updated_at", { ascending: false });
+
+    if (error) throw error;
+    return (data ?? []) as SoapNoteRecord[];
+  } catch (error) {
+    if (isTransientBackendError(error)) {
+      return readDemoSoapNotes()
+        .filter((note) => note.appointment_id === appointmentId)
+        .sort((a, b) => b.updated_at.localeCompare(a.updated_at));
+    }
+
+    throw error;
+  }
+}
+
 export async function saveSoapNote(input: {
+  noteId?: string;
   appointmentId: string;
   patientId: string;
   subjective: string;
@@ -878,20 +974,94 @@ export async function saveSoapNote(input: {
 }) {
   const providerId = await getCurrentUserId();
 
-  const { error } = await supabase.from("clinical_notes").insert({
-    appointment_id: input.appointmentId,
-    patient_id: input.patientId,
-    provider_id: providerId,
-    subjective: input.subjective,
-    objective: input.objective,
-    assessment: input.assessment,
-    plan: input.plan
-  });
+  if (input.appointmentId.startsWith("demo-") || isDemoUserId(providerId)) {
+    const now = new Date().toISOString();
+    const notes = readDemoSoapNotes();
+    const existing = input.noteId ? notes.find((note) => note.id === input.noteId) : null;
 
+    const nextRecord: SoapNoteRecord = {
+      id: existing?.id ?? `demo-soap-${Date.now()}`,
+      appointment_id: input.appointmentId,
+      patient_id: input.patientId,
+      provider_id: providerId,
+      subjective: input.subjective,
+      objective: input.objective,
+      assessment: input.assessment,
+      plan: input.plan,
+      created_at: existing?.created_at ?? now,
+      updated_at: now
+    };
+
+    const updatedNotes = existing
+      ? notes.map((note) => (note.id === existing.id ? nextRecord : note))
+      : [nextRecord, ...notes];
+
+    writeDemoSoapNotes(updatedNotes);
+    return nextRecord;
+  }
+
+  if (input.noteId) {
+    const { data, error } = await supabase
+      .from("clinical_notes")
+      .update({
+        subjective: input.subjective,
+        objective: input.objective,
+        assessment: input.assessment,
+        plan: input.plan
+      })
+      .eq("id", input.noteId)
+      .select("id, appointment_id, patient_id, provider_id, subjective, objective, assessment, plan, created_at, updated_at")
+      .single();
+
+    if (error) throw error;
+    return data as SoapNoteRecord;
+  }
+
+  const { data, error } = await supabase
+    .from("clinical_notes")
+    .insert({
+      appointment_id: input.appointmentId,
+      patient_id: input.patientId,
+      provider_id: providerId,
+      subjective: input.subjective,
+      objective: input.objective,
+      assessment: input.assessment,
+      plan: input.plan
+    })
+    .select("id, appointment_id, patient_id, provider_id, subjective, objective, assessment, plan, created_at, updated_at")
+    .single();
+
+  if (error) throw error;
+  return data as SoapNoteRecord;
+}
+
+export async function deleteSoapNote(noteId: string) {
+  if (noteId.startsWith("demo-soap-")) {
+    writeDemoSoapNotes(readDemoSoapNotes().filter((note) => note.id !== noteId));
+    return;
+  }
+
+  const { error } = await supabase.from("clinical_notes").delete().eq("id", noteId);
   if (error) throw error;
 }
 
 export async function getAppointmentById(appointmentId: string) {
+  if (appointmentId.startsWith("demo-")) {
+    const appointment = [...buildDemoProviderAppointments("demo-provider-1"), ...buildDemoProviderAppointments("demo-provider-2"), ...buildDemoProviderAppointments("demo-provider-3")]
+      .find((item) => item.id === appointmentId);
+
+    if (!appointment) throw new Error("Appointment not found");
+
+    return {
+      id: appointment.id,
+      patient_id: appointment.patient_id,
+      provider_id: "demo-provider-1",
+      start_time: appointment.start_time,
+      status: appointment.status,
+      meeting_url: appointment.meeting_url
+    };
+  }
+
   const { data, error } = await supabase
     .from("appointments")
     .select("id, patient_id, provider_id, start_time, status, meeting_url")
@@ -903,6 +1073,10 @@ export async function getAppointmentById(appointmentId: string) {
 
 export async function getOrCreateConversation(patientId: string, appointmentId?: string | null) {
   const providerId = await getCurrentUserId();
+
+  if (isDemoUserId(providerId) || patientId.startsWith("demo-") || appointmentId?.startsWith("demo-")) {
+    return `demo-conversation-${appointmentId ?? `${providerId}-${patientId}`}`;
+  }
 
   let query = supabase
     .from("conversations")
@@ -927,6 +1101,12 @@ export async function getOrCreateConversation(patientId: string, appointmentId?:
 }
 
 export async function getConversationMessages(conversationId: string) {
+  if (conversationId.startsWith("demo-conversation-")) {
+    return readDemoMessages()
+      .filter((message) => message.conversation_id === conversationId)
+      .sort((a, b) => a.created_at.localeCompare(b.created_at));
+  }
+
   const { data, error } = await supabase
     .from("messages")
     .select("id, sender_id, recipient_id, content, created_at, conversation_id")
@@ -943,6 +1123,21 @@ export async function sendConversationMessage(input: {
   content: string;
 }) {
   const senderId = await getCurrentUserId();
+
+  if (input.conversationId.startsWith("demo-conversation-") || isDemoUserId(senderId) || input.recipientId.startsWith("demo-")) {
+    const nextMessage = {
+      id: `demo-message-${Date.now()}`,
+      sender_id: senderId,
+      recipient_id: input.recipientId,
+      conversation_id: input.conversationId,
+      content: input.content,
+      created_at: new Date().toISOString()
+    };
+
+    writeDemoMessages([...readDemoMessages(), nextMessage]);
+    return nextMessage;
+  }
+
   const { error } = await supabase.from("messages").insert({
     sender_id: senderId,
     recipient_id: input.recipientId,
@@ -950,9 +1145,22 @@ export async function sendConversationMessage(input: {
     content: input.content
   });
   if (error) throw error;
+
+  return {
+    id: `message-${Date.now()}`,
+    sender_id: senderId,
+    recipient_id: input.recipientId,
+    conversation_id: input.conversationId,
+    content: input.content,
+    created_at: new Date().toISOString()
+  };
 }
 
 export function subscribeConversation(conversationId: string, onInsert: (payload: any) => void) {
+  if (conversationId.startsWith("demo-conversation-")) {
+    return { unsubscribe() {} };
+  }
+
   return supabase
     .channel(`conversation:${conversationId}`)
     .on(

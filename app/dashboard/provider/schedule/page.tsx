@@ -37,7 +37,7 @@ function buildUpcomingDates(slot: ProviderAvailabilitySlot) {
   return results;
 }
 
-function buildCalendarDays(appointments: ProviderAppointment[]) {
+function buildCalendarDays(appointments: ProviderAppointment[], availability: ProviderAvailabilitySlot[]) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -45,12 +45,39 @@ function buildCalendarDays(appointments: ProviderAppointment[]) {
     const day = new Date(today);
     day.setDate(today.getDate() + index);
     const dayKey = day.toISOString().slice(0, 10);
+    const now = new Date();
+
+    const availabilitySlots = availability
+      .filter((slot) => slot.day_of_week === day.getDay() && slot.is_active !== false)
+      .map((slot, slotIndex) => {
+        const [startHours, startMinutes] = slot.start_time.slice(0, 5).split(":").map(Number);
+        const [endHours, endMinutes] = slot.end_time.slice(0, 5).split(":").map(Number);
+
+        const start = new Date(day);
+        start.setHours(startHours, startMinutes, 0, 0);
+
+        const end = new Date(day);
+        end.setHours(endHours, endMinutes, 0, 0);
+
+        return {
+          id: `${slot.id}-${dayKey}-${slotIndex}`,
+          start,
+          end,
+          startLabel: start.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          endLabel: end.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+        };
+      })
+      .filter((slot) => slot.end > now)
+      .sort((a, b) => a.start.getTime() - b.start.getTime());
 
     return {
       dateKey: dayKey,
       label: day.toLocaleDateString([], { weekday: "short" }),
       dateText: day.toLocaleDateString([], { month: "short", day: "numeric" }),
-      appointments: appointments.filter((appointment) => appointment.start_time.slice(0, 10) === dayKey)
+      appointments: appointments
+        .filter((appointment) => appointment.start_time.slice(0, 10) === dayKey)
+        .sort((a, b) => a.start_time.localeCompare(b.start_time)),
+      availabilitySlots
     };
   });
 }
@@ -110,7 +137,7 @@ export default function ProviderSchedulePage() {
     await load();
   }
 
-  const calendarDays = buildCalendarDays(appointments);
+  const calendarDays = buildCalendarDays(appointments, availability);
 
   return (
     <div className="space-y-6">
@@ -158,9 +185,11 @@ export default function ProviderSchedulePage() {
       <Card>
         <CardHeader><CardTitle>Calendar view / appointments</CardTitle></CardHeader>
         <CardContent className="space-y-5">
-          {appointments.length === 0 && <p className="text-sm text-muted-foreground">No appointments scheduled.</p>}
+          {appointments.length === 0 && availability.length === 0 && (
+            <p className="text-sm text-muted-foreground">No appointments or saved slots yet.</p>
+          )}
 
-          {!!appointments.length && (
+          {!!calendarDays.length && (
             <div className="grid gap-4 xl:grid-cols-7 md:grid-cols-2">
               {calendarDays.map((day) => (
                 <div key={day.dateKey} className="rounded-xl border bg-muted/10 p-3">
@@ -170,9 +199,25 @@ export default function ProviderSchedulePage() {
                   </div>
 
                   <div className="space-y-3">
-                    {day.appointments.length === 0 && (
-                      <p className="text-xs text-muted-foreground">No appointments</p>
+                    {day.availabilitySlots.length === 0 && day.appointments.length === 0 && (
+                      <p className="text-xs text-muted-foreground">No slots or appointments</p>
                     )}
+
+                    {day.availabilitySlots.map((slotItem) => (
+                      <div key={slotItem.id} className="rounded-lg border border-dashed border-sky-200 bg-sky-50/80 p-3 shadow-sm dark:border-sky-900 dark:bg-sky-950/30">
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <p className="font-medium">
+                              {slotItem.startLabel} - {slotItem.endLabel}
+                            </p>
+                            <p className="text-sm text-muted-foreground">Available booking slot</p>
+                          </div>
+                          <span className="rounded-full bg-sky-100 px-2 py-1 text-[11px] font-medium text-sky-700 dark:bg-sky-900 dark:text-sky-300">
+                            Open
+                          </span>
+                        </div>
+                      </div>
+                    ))}
 
                     {day.appointments.map((appointment) => (
                       <div key={appointment.id} className="rounded-lg border bg-background p-3 shadow-sm">

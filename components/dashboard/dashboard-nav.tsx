@@ -1,13 +1,14 @@
-﻿"use client";
+"use client";
 
+import type { Route } from "next";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 const links = [
-  { href: "/dashboard/patient", label: "Patient" },
-  { href: "/dashboard/provider", label: "Provider" },
-  { href: "/dashboard/admin", label: "Admin" }
+  { href: "/dashboard/patient" as Route, label: "Patient" },
+  { href: "/dashboard/provider" as Route, label: "Provider" },
+  { href: "/dashboard/admin" as Route, label: "Admin" }
 ];
 
 export function DashboardNav() {

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import {
@@ -37,7 +37,13 @@ export function useProviderConversation(conversationId: string) {
   }, [conversationId]);
 
   async function send(recipientId: string, content: string) {
-    await sendConversationMessage({ conversationId, recipientId, content });
+    const nextMessage = await sendConversationMessage({ conversationId, recipientId, content });
+    if (!nextMessage) return;
+
+    setMessages((prev) => {
+      if (prev.some((message) => message.id === nextMessage.id)) return prev;
+      return [...prev, nextMessage as ConversationMessage];
+    });
   }
 
   return { messages, send };

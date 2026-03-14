@@ -1,10 +1,11 @@
-﻿import Link from "next/link";
+import type { Route } from "next";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 const links = [
-  { href: "/dashboard/provider", label: "Overview" },
-  { href: "/dashboard/provider/patients", label: "Patients" },
-  { href: "/dashboard/provider/schedule", label: "Schedule" }
+  { href: "/dashboard/provider" as Route, label: "Overview" },
+  { href: "/dashboard/provider/patients" as Route, label: "Patients" },
+  { href: "/dashboard/provider/schedule" as Route, label: "Schedule" }
 ];
 
 export function ProviderNav({ pathname }: { pathname: string }) {
