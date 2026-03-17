@@ -45,53 +45,81 @@ export function ProviderDashboardGraphs({
 }) {
   return (
     <div className="grid gap-4 xl:grid-cols-2">
-      <div className="h-72 w-full">
-        <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
-            <Pie data={statusData} dataKey="value" nameKey="name" innerRadius={55} outerRadius={95} paddingAngle={4}>
-              {statusData.map((entry, index) => (
-                <Cell key={entry.name} fill={pieColors[index % pieColors.length]} />
-              ))}
-            </Pie>
-            <Tooltip />
-          </PieChart>
-        </ResponsiveContainer>
+      <div className="rounded-2xl border bg-background/60 p-4">
+        <div className="mb-3 space-y-1">
+          <h3 className="text-sm font-semibold">Appointment Status Mix</h3>
+          <p className="text-xs text-muted-foreground">Shows how your consultations are split across pending, confirmed, completed, and cancelled visits.</p>
+          <p className="text-xs text-muted-foreground">Why it matters: helps you spot backlog, cancellations, and whether scheduled care is actually being completed.</p>
+        </div>
+        <div className="h-72 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie data={statusData} dataKey="value" nameKey="name" innerRadius={55} outerRadius={95} paddingAngle={4}>
+                {statusData.map((entry, index) => (
+                  <Cell key={entry.name} fill={pieColors[index % pieColors.length]} />
+                ))}
+              </Pie>
+              <Tooltip />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
       </div>
 
-      <div className="h-72 w-full">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={scheduleData}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="label" />
-            <YAxis allowDecimals={false} />
-            <Tooltip />
-            <Bar dataKey="appointments" fill="#14b8a6" radius={[6, 6, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
+      <div className="rounded-2xl border bg-background/60 p-4">
+        <div className="mb-3 space-y-1">
+          <h3 className="text-sm font-semibold">Upcoming 7-Day Load</h3>
+          <p className="text-xs text-muted-foreground">Shows how many appointments are booked on each day in the next week.</p>
+          <p className="text-xs text-muted-foreground">Why it matters: helps you identify overloaded days and where you still have room to open more slots.</p>
+        </div>
+        <div className="h-72 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={scheduleData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="label" />
+              <YAxis allowDecimals={false} />
+              <Tooltip />
+              <Bar dataKey="appointments" fill="#14b8a6" radius={[6, 6, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
       </div>
 
-      <div className="h-72 w-full">
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={monthlyData}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="label" />
-            <YAxis allowDecimals={false} />
-            <Tooltip />
-            <Line type="monotone" dataKey="consultations" stroke="#3b82f6" strokeWidth={3} dot={{ r: 4 }} />
-          </LineChart>
-        </ResponsiveContainer>
+      <div className="rounded-2xl border bg-background/60 p-4">
+        <div className="mb-3 space-y-1">
+          <h3 className="text-sm font-semibold">Monthly Consultation Trend</h3>
+          <p className="text-xs text-muted-foreground">Shows consultation volume over the last six months.</p>
+          <p className="text-xs text-muted-foreground">Why it matters: helps you see whether patient demand is rising, stable, or dropping over time.</p>
+        </div>
+        <div className="h-72 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={monthlyData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="label" />
+              <YAxis allowDecimals={false} />
+              <Tooltip />
+              <Line type="monotone" dataKey="consultations" stroke="#3b82f6" strokeWidth={3} dot={{ r: 4 }} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
       </div>
 
-      <div className="h-72 w-full">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={priorityData}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="name" />
-            <YAxis allowDecimals={false} />
-            <Tooltip />
-            <Bar dataKey="value" fill="#f59e0b" radius={[6, 6, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
+      <div className="rounded-2xl border bg-background/60 p-4">
+        <div className="mb-3 space-y-1">
+          <h3 className="text-sm font-semibold">Patient Priority Distribution</h3>
+          <p className="text-xs text-muted-foreground">Shows how your patient panel is split between high, medium, and normal priority cases.</p>
+          <p className="text-xs text-muted-foreground">Why it matters: helps you balance urgent follow-up work against routine care and manage clinical risk.</p>
+        </div>
+        <div className="h-72 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={priorityData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis allowDecimals={false} />
+              <Tooltip />
+              <Bar dataKey="value" fill="#f59e0b" radius={[6, 6, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
       </div>
     </div>
   );
