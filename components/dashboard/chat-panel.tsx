@@ -34,7 +34,7 @@ export function ChatPanel({ userId, peerId, peerName }: { userId: string; peerId
         try {
           const allDemo = JSON.parse(raw) as ChatMessage[];
           const relevant = allDemo.filter(
-            (m) =>
+            (m: ChatMessage) =>
               (m.sender_id === userId && m.recipient_id === peerId) ||
               (m.sender_id === peerId && m.recipient_id === userId)
           );
