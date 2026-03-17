@@ -116,7 +116,7 @@ export default function ProviderPatientProfilePage() {
                   </span>
                 </div>
                 <p className="text-xs font-medium text-muted-foreground leading-relaxed italic">
-                  "{visit.reason ?? "No clinical reason provided."}"
+                  &quot;{visit.reason ?? "No clinical reason provided."}&quot;
                 </p>
               </div>
             ))}
