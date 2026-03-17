@@ -10,6 +10,7 @@ const DEMO_PROVIDER_PROFILE_KEY = "hf_demo_provider_profile";
 const DEMO_BOOKINGS_KEY = "hf_demo_bookings";
 const DEMO_SOAP_NOTES_KEY = "hf_demo_soap_notes";
 const DEMO_MESSAGES_KEY = "hf_demo_messages";
+const WEEKDAY_LABELS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"] as const;
 
 export interface ProviderCategory {
   id: string;
@@ -1201,7 +1202,7 @@ export async function saveAvailability(input: { dayOfWeek: number; startTime: st
     is_active: true
   });
 
-  logActivity("Updated Availability", `Saved new slot for ${weekdayLabels[input.dayOfWeek]} at ${input.startTime}`, "availability");
+  logActivity("Updated Availability", `Saved new slot for ${WEEKDAY_LABELS[input.dayOfWeek] ?? "selected day"} at ${input.startTime}`, "availability");
 
   const { error } = await supabase.rpc("save_provider_availability", {
     p_day_of_week: input.dayOfWeek,
