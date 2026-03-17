@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { showNotification } from "@/components/layout/GlobalNotification";
 import { cn } from "@/lib/utils";
 
-interface ChatMessage {
+interface LocalChatMessage {
   id: string;
   content: string;
   sender_id: string;
@@ -16,7 +16,7 @@ interface ChatMessage {
 }
 
 export function ChatPanel({ userId, peerId, peerName }: { userId: string; peerId: string; peerName?: string }) {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<LocalChatMessage[]>([]);
   const [value, setValue] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -27,17 +27,25 @@ export function ChatPanel({ userId, peerId, peerName }: { userId: string; peerId
   }, [messages]);
 
   useEffect(() => {
-    // Initial load for demo messages
+    // Initial load for demo messages from local storage
     if (typeof localStorage !== "undefined") {
       const raw = localStorage.getItem("hf_demo_messages");
       if (raw) {
         try {
-          const allDemo = JSON.parse(raw) as ChatMessage[];
-          const relevant = allDemo.filter(
-            (m: ChatMessage) =>
+          const allDemo = JSON.parse(raw) as any[];
+          const relevant = allDemo
+            .filter((m: any) => 
               (m.sender_id === userId && m.recipient_id === peerId) ||
               (m.sender_id === peerId && m.recipient_id === userId)
-          );
+            )
+            .map((m: any) => ({
+              id: m.id,
+              content: m.content,
+              sender_id: m.sender_id,
+              recipient_id: m.recipient_id,
+              created_at: m.created_at
+            } as LocalChatMessage));
+          
           setMessages(relevant);
         } catch (e) {
           console.error("Failed to parse demo messages", e);
@@ -46,7 +54,16 @@ export function ChatPanel({ userId, peerId, peerName }: { userId: string; peerId
     }
 
     const channel = subscribeToMessages(userId, peerId, (payload) => {
-      setMessages((prev) => [...prev, payload.new as ChatMessage]);
+      if (payload.new) {
+        const msg = payload.new as any;
+        setMessages((prev) => [...prev, {
+          id: msg.id,
+          content: msg.content,
+          sender_id: msg.sender_id,
+          recipient_id: msg.recipient_id,
+          created_at: msg.created_at
+        } as LocalChatMessage]);
+      }
     });
 
     return () => {
@@ -61,7 +78,7 @@ export function ChatPanel({ userId, peerId, peerName }: { userId: string; peerId
       await sendMessage({ senderId: userId, recipientId: peerId, content: value });
       
       // Optimistic update for demo/local flow
-      const nextMsg: ChatMessage = {
+      const nextMsg: LocalChatMessage = {
         id: `local-${Date.now()}`,
         content: value,
         sender_id: userId,
