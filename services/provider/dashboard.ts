@@ -154,7 +154,12 @@ function isTransientBackendError(error: unknown) {
     message.includes("Unexpected token '<'") ||
     message.includes("is not valid JSON") ||
     message.includes("Failed to fetch") ||
-    message.includes("NetworkError")
+    message.includes("NetworkError") ||
+    message.includes("Could not find the function") ||
+    message.includes("schema cache") ||
+    message.includes("fetch_provider_availability") ||
+    message.includes("save_provider_availability") ||
+    message.includes("PGRST202")
   );
 }
 
@@ -1165,45 +1170,58 @@ export async function fetchProviderAppointments(): Promise<ProviderAppointment[]
 
 export async function saveAvailability(input: { dayOfWeek: number; startTime: string; endTime: string }) {
   const providerId = await getCurrentUserId();
-  const [{ data: user }, { data: provider }] = await Promise.all([
-    supabase.from("users").select("full_name").eq("id", providerId).maybeSingle(),
-    supabase.from("providers").select("specialization").eq("user_id", providerId).maybeSingle()
-  ]);
+  let providerName = "Provider";
+  let categoryName: string | null = null;
 
-  await saveProviderAvailabilityPayload(providerId, (current) => {
-    // ... rest of logic
-    const existingSlots = normalizeAvailabilitySlots(current);
-    const deduped = existingSlots.filter((slot) => {
-      return !(
-        slot.day_of_week === input.dayOfWeek &&
-        slot.start_time === input.startTime &&
-        slot.end_time === input.endTime
-      );
+  try {
+    const [{ data: user }, { data: provider }] = await Promise.all([
+      supabase.from("users").select("full_name").eq("id", providerId).maybeSingle(),
+      supabase.from("providers").select("specialization").eq("user_id", providerId).maybeSingle()
+    ]);
+
+    providerName = user?.full_name ?? providerName;
+    categoryName = provider?.specialization ?? categoryName;
+  } catch (error) {
+    if (!isTransientBackendError(error)) throw error;
+  }
+
+  try {
+    await saveProviderAvailabilityPayload(providerId, (current) => {
+      const existingSlots = normalizeAvailabilitySlots(current);
+      const deduped = existingSlots.filter((slot) => {
+        return !(
+          slot.day_of_week === input.dayOfWeek &&
+          slot.start_time === input.startTime &&
+          slot.end_time === input.endTime
+        );
+      });
+
+      deduped.push({
+        id: `${input.dayOfWeek}-${input.startTime}-${input.endTime}`,
+        day_of_week: input.dayOfWeek,
+        start_time: input.startTime,
+        end_time: input.endTime,
+        is_active: true
+      });
+
+      deduped.sort((a, b) => {
+        if (a.day_of_week !== b.day_of_week) return a.day_of_week - b.day_of_week;
+        return a.start_time.localeCompare(b.start_time);
+      });
+
+      return {
+        notes: current?.notes ?? "",
+        slots: deduped
+      };
     });
-
-    deduped.push({
-      id: `${input.dayOfWeek}-${input.startTime}-${input.endTime}`,
-      day_of_week: input.dayOfWeek,
-      start_time: input.startTime,
-      end_time: input.endTime,
-      is_active: true
-    });
-
-    deduped.sort((a, b) => {
-      if (a.day_of_week !== b.day_of_week) return a.day_of_week - b.day_of_week;
-      return a.start_time.localeCompare(b.start_time);
-    });
-
-    return {
-      notes: current?.notes ?? "",
-      slots: deduped
-    };
-  });
+  } catch (error) {
+    if (!isTransientBackendError(error)) throw error;
+  }
 
   upsertSyncedProviderSlot({
     provider_id: providerId,
-    provider_name: user?.full_name ?? "Provider",
-    category_name: provider?.specialization ?? null,
+    provider_name: providerName,
+    category_name: categoryName,
     day_of_week: input.dayOfWeek,
     start_time: input.startTime,
     end_time: input.endTime,
@@ -1211,21 +1229,6 @@ export async function saveAvailability(input: { dayOfWeek: number; startTime: st
   });
 
   logActivity("Updated Availability", `Saved new slot for ${WEEKDAY_LABELS[input.dayOfWeek] ?? "selected day"} at ${input.startTime}`, "availability");
-
-  const { error } = await supabase.rpc("save_provider_availability", {
-    p_day_of_week: input.dayOfWeek,
-    p_start_time: input.startTime,
-    p_end_time: input.endTime
-  });
-  // ...
-
-  if (
-    error &&
-    !error.message.toLowerCase().includes("save_provider_availability") &&
-    !error.message.toLowerCase().includes("function")
-  ) {
-    throw error;
-  }
 }
 
 export async function fetchAvailability() {
@@ -1240,9 +1243,9 @@ export async function fetchAvailability() {
       is_active: slot.is_active
     }));
 
-  const { data, error } = await supabase.rpc("fetch_provider_availability");
-  if (!error) {
-    const merged = [...((data ?? []) as ProviderAvailabilitySlot[]), ...localSlots];
+  try {
+    const fallback = await fetchProviderAvailabilityPayload(providerId);
+    const merged = [...normalizeAvailabilitySlots(fallback), ...localSlots];
     const deduped = new Map<string, ProviderAvailabilitySlot>();
     for (const slot of merged) {
       deduped.set(`${slot.day_of_week}-${slot.start_time}-${slot.end_time}`, slot);
@@ -1251,15 +1254,13 @@ export async function fetchAvailability() {
       if (a.day_of_week !== b.day_of_week) return a.day_of_week - b.day_of_week;
       return a.start_time.localeCompare(b.start_time);
     });
+  } catch (error) {
+    if (!isTransientBackendError(error)) {
+      throw error;
+    }
   }
 
-  const fallback = await fetchProviderAvailabilityPayload(providerId);
-  const merged = [...normalizeAvailabilitySlots(fallback), ...localSlots];
-  const deduped = new Map<string, ProviderAvailabilitySlot>();
-  for (const slot of merged) {
-    deduped.set(`${slot.day_of_week}-${slot.start_time}-${slot.end_time}`, slot);
-  }
-  return Array.from(deduped.values()).sort((a, b) => {
+  return localSlots.sort((a, b) => {
     if (a.day_of_week !== b.day_of_week) return a.day_of_week - b.day_of_week;
     return a.start_time.localeCompare(b.start_time);
   });

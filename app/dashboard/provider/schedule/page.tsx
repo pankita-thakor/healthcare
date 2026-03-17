@@ -17,6 +17,26 @@ import { Input } from "@/components/ui/input";
 
 const weekdayLabels = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
+function mergeAvailabilitySlots(
+  current: ProviderAvailabilitySlot[],
+  next: ProviderAvailabilitySlot
+) {
+  const deduped = current.filter((slot) => {
+    return !(
+      slot.day_of_week === next.day_of_week &&
+      slot.start_time === next.start_time &&
+      slot.end_time === next.end_time
+    );
+  });
+
+  deduped.push(next);
+
+  return deduped.sort((a, b) => {
+    if (a.day_of_week !== b.day_of_week) return a.day_of_week - b.day_of_week;
+    return a.start_time.localeCompare(b.start_time);
+  });
+}
+
 function buildUpcomingDates(slot: ProviderAvailabilitySlot) {
   const results: string[] = [];
   const now = new Date();
@@ -104,13 +124,29 @@ export default function ProviderSchedulePage() {
   const [rescheduleMap, setRescheduleMap] = useState<Record<string, string>>({});
 
   async function load() {
-    try {
-      const [a, avail] = await Promise.all([fetchProviderAppointments(), fetchAvailability()]);
-      setAppointments(a);
-      setAvailability(avail);
-    } catch (err) {
-      showNotification((err as Error).message, "error");
+    const [appointmentsResult, availabilityResult] = await Promise.allSettled([
+      fetchProviderAppointments(),
+      fetchAvailability()
+    ]);
+
+    if (appointmentsResult.status === "fulfilled") {
+      setAppointments(appointmentsResult.value);
+    } else {
+      setAppointments([]);
+    }
+
+    if (availabilityResult.status === "fulfilled") {
+      setAvailability(availabilityResult.value);
+    } else {
       setAvailability([]);
+    }
+
+    if (appointmentsResult.status === "rejected" && availabilityResult.status === "rejected") {
+      showNotification((availabilityResult.reason as Error).message, "error");
+    } else if (appointmentsResult.status === "rejected") {
+      showNotification((appointmentsResult.reason as Error).message, "error");
+    } else if (availabilityResult.status === "rejected") {
+      showNotification((availabilityResult.reason as Error).message, "error");
     }
   }
 
@@ -121,11 +157,20 @@ export default function ProviderSchedulePage() {
   async function onSaveAvailability(e: React.FormEvent) {
     e.preventDefault();
     try {
+      const nextSlot: ProviderAvailabilitySlot = {
+        id: `${slot.dayOfWeek}-${slot.startTime}-${slot.endTime}`,
+        day_of_week: Number(slot.dayOfWeek),
+        start_time: slot.startTime,
+        end_time: slot.endTime,
+        is_active: true
+      };
+
       await saveAvailability({
-        dayOfWeek: Number(slot.dayOfWeek),
+        dayOfWeek: nextSlot.day_of_week,
         startTime: slot.startTime,
         endTime: slot.endTime
       });
+      setAvailability((prev) => mergeAvailabilitySlots(prev, nextSlot));
       await load();
       showNotification("Availability slot saved and synced successfully.");
     } catch (err) {
