@@ -74,7 +74,7 @@ export function PatientDashboard() {
       </div>
 
       {data.peerProviderId ? (
-        <ChatPanel userId={data.patientId} peerId={data.peerProviderId} />
+        <ChatPanel userId={data.patientId} peerId={data.peerProviderId} peerName={data.peerProviderName ?? undefined} />
       ) : (
         <Card>
           <CardHeader>

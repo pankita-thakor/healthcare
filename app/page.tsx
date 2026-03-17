@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState, useRef, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   Activity,
   ArrowRight,
@@ -136,13 +136,13 @@ const doctorCategories = [
   },
   {
     name: "Dr. Sarah M.",
-    image: "https://images.unsplash.com/photo-1559839734-2b71f1e3c770?auto=format&fit=crop&q=80&w=300&h=300",
+    image: "https://images.unsplash.com/photo-1594824476967-48c8b964273f?auto=format&fit=crop&q=80&w=600&h=800",
     specialty: "Cardiologist",
     tag: "Heart Expert"
   },
   {
     name: "Dr. Elena R.",
-    image: "https://images.unsplash.com/photo-1594824476967-48c8b964273f?auto=format&fit=crop&q=80&w=300&h=300",
+    image: "https://images.unsplash.com/photo-1614608682850-e0d6ed316d47?auto=format&fit=crop&q=80&w=600&h=800",
     specialty: "Dermatologist",
     tag: "Skin Specialist"
   }
@@ -155,6 +155,24 @@ const sliderItems = [
   "Prescription Management",
   "Doctor Follow-Ups",
   "Wellness Coaching"
+];
+
+const processSteps = [
+  { title: "Select Specialist", desc: "Choose from 500+ verified doctors across India.", icon: Search },
+  { title: "Digital Consult", desc: "Secure HD video calls and 24/7 instant chat support.", icon: Smartphone },
+  { title: "Care Continuity", desc: "Proactive follow-ups and AI-powered health monitoring.", icon: HeartPulse }
+];
+
+const processImages = [
+  "https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&q=80&w=800",
+  "https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=800",
+  "https://images.unsplash.com/photo-1505751172876-fa1923c5c528?auto=format&fit=crop&q=80&w=800"
+];
+
+const processStepDetails = [
+  "Advanced search algorithms to match you with the right specialist based on symptoms and language preferences.",
+  "End-to-end encrypted video platform that works even on low-bandwidth connections for seamless care.",
+  "Integrated health dashboard that combines your vitals, prescriptions, and AI insights in one secure location."
 ];
 
 const testimonials = [
@@ -196,6 +214,7 @@ function RatingStars({ value }: { value: number }) {
 
 export default function HomePage() {
   const [activeStep, setActiveStep] = useState(0);
+  const [brokenDoctorImages, setBrokenDoctorImages] = useState<Record<string, boolean>>({});
   const containerRef = useRef(null);
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -203,6 +222,14 @@ export default function HomePage() {
   });
 
   const smoothProgress = useSpring(scrollYProgress, { stiffness: 100, damping: 30, restDelta: 0.001 });
+
+  useEffect(() => {
+    const stepInterval = window.setInterval(() => {
+      setActiveStep((currentStep) => (currentStep + 1) % processSteps.length);
+    }, 3500);
+
+    return () => window.clearInterval(stepInterval);
+  }, []);
 
   const aiChatMessages = [
     { type: "ai", text: "Hi! How can I help you today?" },
@@ -277,7 +304,7 @@ export default function HomePage() {
 
       <main>
         {/* Creative Hero Section */}
-        <section className="container relative pt-16 pb-24 lg:pt-32 lg:pb-32 overflow-hidden">
+        <section className="container relative overflow-visible pt-16 pb-24 lg:pt-32 lg:pb-32">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <motion.div 
               initial={{ opacity: 0, x: -50 }}
@@ -285,13 +312,13 @@ export default function HomePage() {
               transition={{ duration: 0.8, ease: "easeOut" }}
               className="space-y-8 relative z-10"
             >
-              <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-primary">
+              <div className="animate-soft-float inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-primary">
                 <Zap className="h-3 w-3 fill-primary" />
                 The Future of Family Health
               </div>
               <h1 className="text-6xl lg:text-[5.5rem] font-black leading-[0.9] tracking-tighter">
                 Health <br />
-                <span className="text-primary italic font-serif relative">
+                <span className="animate-text-shimmer text-primary italic font-serif relative">
                   Simplified.
                   <motion.span 
                     className="absolute -bottom-2 left-0 w-full h-2 bg-primary/20 rounded-full"
@@ -305,12 +332,12 @@ export default function HomePage() {
                 Expert doctors, AI-driven monitoring, and a seamless care journey—all in your pocket. Because your family deserves the best.
               </p>
               <div className="flex flex-wrap gap-4 pt-4">
-                <Button size="lg" className="rounded-full px-8 h-14 text-lg font-bold group bg-primary hover:bg-primary/90" asChild>
+                <Button size="lg" className="sheen-button animate-glow-pulse rounded-full px-8 h-14 text-lg font-bold group bg-primary hover:bg-primary/90" asChild>
                   <Link href="/signup">
                     Consult Now <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-2" />
                   </Link>
                 </Button>
-                <Button variant="outline" size="lg" className="rounded-full px-8 h-14 text-lg font-bold backdrop-blur-sm bg-background/40">
+                <Button variant="outline" size="lg" className="sheen-button rounded-full px-8 h-14 text-lg font-bold backdrop-blur-sm bg-background/40">
                   Our Specialists
                 </Button>
               </div>
@@ -346,14 +373,14 @@ export default function HomePage() {
               initial={{ opacity: 0, scale: 0.8, rotateY: -20 }}
               animate={{ opacity: 1, scale: 1, rotateY: 0 }}
               transition={{ duration: 1, ease: "easeOut" }}
-              className="relative perspective-1000"
+              className="relative px-4 py-8 lg:px-10 perspective-1000"
             >
               <div className="absolute -inset-10 bg-gradient-to-tr from-primary/30 to-accent/30 rounded-full blur-[100px] opacity-40 animate-pulse" />
               
               {/* Interactive Phone Mockup */}
               <motion.div 
                 whileHover={{ rotateY: 5, rotateX: -5, scale: 1.02 }}
-                className="relative z-10 w-full max-w-[420px] mx-auto overflow-hidden rounded-[3rem] border-8 border-foreground/5 bg-background shadow-[0_0_50px_-12px_rgba(0,0,0,0.25)] shadow-primary/10"
+              className="animate-soft-float-delayed relative z-10 w-full max-w-[420px] mx-auto overflow-hidden rounded-[3rem] border-8 border-foreground/5 bg-background shadow-[0_0_50px_-12px_rgba(0,0,0,0.25)] shadow-primary/10"
               >
                 <div className="absolute top-0 inset-x-0 h-8 flex items-center justify-center gap-1.5 bg-muted/20">
                    <div className="w-12 h-4 rounded-full bg-foreground/10" />
@@ -430,9 +457,9 @@ export default function HomePage() {
               <motion.div 
                 animate={{ y: [0, 20, 0], x: [0, 10, 0] }}
                 transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-                className="absolute -right-12 top-1/4 z-20 hidden xl:block"
+                className="absolute right-0 top-1/4 z-20 hidden 2xl:block"
               >
-                <div className="p-4 rounded-2xl bg-background shadow-2xl border border-border/40 backdrop-blur-md flex items-center gap-3">
+                <div className="animate-glass-drift p-4 rounded-2xl bg-background shadow-2xl border border-border/40 backdrop-blur-md flex items-center gap-3">
                    <div className="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center text-white">
                       <CalendarCheck2 className="h-5 w-5" />
                    </div>
@@ -446,9 +473,9 @@ export default function HomePage() {
               <motion.div 
                 animate={{ y: [0, -20, 0], x: [0, -10, 0] }}
                 transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-                className="absolute -left-16 bottom-1/4 z-20 hidden xl:block"
+                className="absolute left-0 bottom-1/4 z-20 hidden 2xl:block"
               >
-                <div className="p-4 rounded-2xl bg-background shadow-2xl border border-border/40 backdrop-blur-md flex items-center gap-3">
+                <div className="animate-glass-drift-delayed p-4 rounded-2xl bg-background shadow-2xl border border-border/40 backdrop-blur-md flex items-center gap-3">
                    <div className="h-10 w-10 rounded-full bg-emerald-500 flex items-center justify-center text-white">
                       <Activity className="h-5 w-5" />
                    </div>
@@ -499,7 +526,7 @@ export default function HomePage() {
                 transition={{ delay: idx * 0.1 }}
                 viewport={{ once: true }}
                 whileHover={{ y: -10 }}
-                className="group relative overflow-hidden p-8 rounded-[2.5rem] border border-border/60 bg-background/50 backdrop-blur-sm transition-all hover:border-primary/40 hover:shadow-2xl hover:shadow-primary/5"
+                className="surface-sheen group relative overflow-hidden p-8 rounded-[2.5rem] border border-border/60 bg-background/50 backdrop-blur-sm transition-all hover:border-primary/40 hover:shadow-2xl hover:shadow-primary/5"
               >
                 <div className={`h-16 w-16 rounded-[1.5rem] ${feature.color} flex items-center justify-center mb-8 transition-transform group-hover:scale-110 group-hover:rotate-6 duration-300`}>
                   <feature.icon className="h-8 w-8" />
@@ -555,7 +582,11 @@ export default function HomePage() {
                        ))}
                     </ul>
 
-                    <Button variant="outline" size="lg" className="rounded-full px-10 h-14 border-white/20 text-white hover:bg-white/10 font-bold text-lg">
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      className="sheen-button rounded-full px-10 h-14 border-background/30 bg-transparent text-background hover:bg-background/10 hover:text-background font-bold text-lg"
+                    >
                        Meet the AI
                     </Button>
                  </div>
@@ -634,12 +665,28 @@ export default function HomePage() {
                   className="group relative"
                 >
                   <div className="relative aspect-[3/4] rounded-[3rem] overflow-hidden border border-border/40 shadow-2xl">
-                     <Image 
-                       src={doctor.image} 
-                       alt={doctor.name} 
-                       fill 
-                       className="object-cover transition-transform duration-700 group-hover:scale-110" 
-                     />
+                     {brokenDoctorImages[doctor.name] ? (
+                       <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-primary/15 via-background to-muted p-8 text-center">
+                         <div className="mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-primary/15 text-primary">
+                           <UserRound className="h-10 w-10" />
+                         </div>
+                         <p className="text-2xl font-black text-foreground">{doctor.name}</p>
+                         <p className="mt-2 text-sm font-bold italic text-muted-foreground">{doctor.specialty}</p>
+                       </div>
+                     ) : (
+                       <Image
+                         src={doctor.image}
+                         alt={doctor.name}
+                         fill
+                         className="object-cover transition-transform duration-700 group-hover:scale-110"
+                         onError={() =>
+                           setBrokenDoctorImages((currentState) => ({
+                             ...currentState,
+                             [doctor.name]: true
+                           }))
+                         }
+                       />
+                     )}
                      <div className="absolute inset-0 bg-gradient-to-t from-foreground/90 via-foreground/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500" />
                      
                      <div className="absolute bottom-0 left-0 right-0 p-8 translate-y-10 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-500 z-10">
@@ -675,11 +722,7 @@ export default function HomePage() {
                     </div>
 
                     <div className="space-y-2">
-                       {[
-                         { title: "Select Specialist", desc: "Choose from 500+ verified doctors across India.", icon: Search },
-                         { title: "Digital Consult", icon: Smartphone, desc: "Secure HD video calls and 24/7 instant chat support." },
-                         { title: "Care Continuity", icon: HeartPulse, desc: "Proactive follow-ups and AI-powered health monitoring." }
-                       ].map((step, i) => (
+                       {processSteps.map((step, i) => (
                          <div 
                            key={step.title}
                            onClick={() => setActiveStep(i)}
@@ -710,11 +753,7 @@ export default function HomePage() {
                          className="relative z-10 w-full max-w-[500px] aspect-[4/5] rounded-[3rem] overflow-hidden shadow-[0_50px_100px_-20px_rgba(0,0,0,0.3)] border-8 border-background bg-muted"
                        >
                           <Image 
-                            src={[
-                              "https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&q=80&w=800",
-                              "https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=800",
-                              "https://images.unsplash.com/photo-1505751172876-fa1923c5c528?auto=format&fit=crop&q=80&w=800"
-                            ][activeStep]} 
+                            src={processImages[activeStep]} 
                             alt="Process" 
                             fill 
                             className="object-cover" 
@@ -724,16 +763,23 @@ export default function HomePage() {
                              <div className="p-6 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20">
                                 <p className="text-white font-black uppercase text-xs tracking-widest mb-2">Step Details</p>
                                 <p className="text-white/80 text-sm font-medium italic">
-                                   {[
-                                     "Advanced search algorithms to match you with the right specialist based on symptoms and language preferences.",
-                                     "End-to-end encrypted video platform that works even on low-bandwidth connections for seamless care.",
-                                     "Integrated health dashboard that combines your vitals, prescriptions, and AI insights in one secure location."
-                                   ][activeStep]}
+                                   {processStepDetails[activeStep]}
                                 </p>
                              </div>
                           </div>
                        </motion.div>
                     </AnimatePresence>
+                    <div className="absolute bottom-6 left-1/2 z-20 flex -translate-x-1/2 gap-2">
+                      {processSteps.map((step, index) => (
+                        <button
+                          key={step.title}
+                          type="button"
+                          aria-label={`Show ${step.title}`}
+                          onClick={() => setActiveStep(index)}
+                          className={`h-2.5 rounded-full transition-all ${activeStep === index ? "w-10 bg-primary" : "w-2.5 bg-foreground/20 hover:bg-foreground/35"}`}
+                        />
+                      ))}
+                    </div>
                     
                     {/* Floating Orbs for the step section */}
                     <motion.div 
@@ -766,7 +812,11 @@ export default function HomePage() {
                     <Button size="lg" className="rounded-full px-12 h-16 text-xl font-black bg-primary text-foreground hover:scale-110 active:scale-95 transition-all shadow-2xl shadow-primary/40" asChild>
                        <Link href="/signup">Get Started Now</Link>
                     </Button>
-                    <Button variant="outline" size="lg" className="rounded-full px-12 h-16 text-xl font-black border-background/20 text-background hover:bg-background/10 backdrop-blur-sm">
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      className="sheen-button rounded-full px-12 h-16 text-xl font-black border-background/30 bg-transparent text-background hover:bg-background/10 hover:text-background backdrop-blur-sm"
+                    >
                        Our Story
                     </Button>
                  </div>
@@ -848,6 +898,120 @@ export default function HomePage() {
         {/* Background Accent for footer */}
         <div className="absolute -bottom-40 -right-40 h-80 w-80 bg-primary/10 rounded-full blur-[120px]" />
       </footer>
+      <style jsx global>{`
+        @keyframes softFloat {
+          0%, 100% {
+            transform: translate3d(0, 0, 0);
+          }
+          50% {
+            transform: translate3d(0, -10px, 0);
+          }
+        }
+
+        @keyframes softFloatDelayed {
+          0%, 100% {
+            transform: translate3d(0, 0, 0);
+          }
+          50% {
+            transform: translate3d(0, 12px, 0);
+          }
+        }
+
+        @keyframes glowPulse {
+          0%, 100% {
+            box-shadow: 0 12px 30px -14px rgba(16, 185, 129, 0.45);
+          }
+          50% {
+            box-shadow: 0 18px 42px -12px rgba(16, 185, 129, 0.7);
+          }
+        }
+
+        @keyframes sheenSweep {
+          0% {
+            transform: translateX(-160%) skewX(-20deg);
+          }
+          55%, 100% {
+            transform: translateX(220%) skewX(-20deg);
+          }
+        }
+
+        @keyframes textShimmer {
+          0%, 100% {
+            text-shadow: 0 0 0 rgba(16, 185, 129, 0);
+            filter: saturate(1);
+          }
+          50% {
+            text-shadow: 0 0 18px rgba(16, 185, 129, 0.22);
+            filter: saturate(1.15);
+          }
+        }
+
+        .animate-soft-float {
+          animation: softFloat 5.8s ease-in-out infinite;
+        }
+
+        .animate-soft-float-delayed {
+          animation: softFloatDelayed 6.8s ease-in-out infinite;
+        }
+
+        .animate-glass-drift {
+          animation: softFloat 6.2s ease-in-out infinite;
+        }
+
+        .animate-glass-drift-delayed {
+          animation: softFloatDelayed 7.4s ease-in-out infinite;
+        }
+
+        .animate-glow-pulse {
+          animation: glowPulse 3.6s ease-in-out infinite;
+        }
+
+        .animate-text-shimmer {
+          animation: textShimmer 4.8s ease-in-out infinite;
+        }
+
+        .sheen-button {
+          position: relative;
+          overflow: hidden;
+          isolation: isolate;
+        }
+
+        .sheen-button::after {
+          content: "";
+          position: absolute;
+          inset: -20%;
+          background: linear-gradient(110deg, transparent 35%, rgba(255, 255, 255, 0.35) 50%, transparent 65%);
+          transform: translateX(-160%) skewX(-20deg);
+          animation: sheenSweep 4.8s ease-in-out infinite;
+          pointer-events: none;
+        }
+
+        .surface-sheen::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), transparent 40%, transparent 60%, rgba(16, 185, 129, 0.08));
+          opacity: 0;
+          transition: opacity 300ms ease;
+          pointer-events: none;
+        }
+
+        .surface-sheen:hover::before {
+          opacity: 1;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .animate-soft-float,
+          .animate-soft-float-delayed,
+          .animate-glass-drift,
+          .animate-glass-drift-delayed,
+          .animate-glow-pulse,
+          .animate-text-shimmer,
+          .sheen-button::after {
+            animation: none !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }

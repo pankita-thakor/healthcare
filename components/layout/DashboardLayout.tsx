@@ -8,6 +8,7 @@ import { createBrowserClient } from "@/lib/supabase";
 import { getClientRole } from "@/lib/client-auth";
 import { cn } from "@/lib/utils";
 import { Header } from "@/components/layout/Header";
+import { GlobalNotification } from "@/components/layout/GlobalNotification";
 
 type Role = "patient" | "provider" | "admin";
 type NavLink = { href: Route; label: string };
@@ -15,7 +16,8 @@ type NavLink = { href: Route; label: string };
 function roleLinks(role: Role | null): NavLink[] {
   if (role === "patient") {
     return [
-      { href: "/dashboard/patient", label: "Overview" }
+      { href: "/dashboard/patient", label: "Overview" },
+      { href: "/dashboard/activity", label: "Activity" }
     ];
   }
 
@@ -23,7 +25,8 @@ function roleLinks(role: Role | null): NavLink[] {
     return [
       { href: "/dashboard/provider", label: "Overview" },
       { href: "/dashboard/provider/patients", label: "Patients" },
-      { href: "/dashboard/provider/schedule", label: "Schedule" }
+      { href: "/dashboard/provider/schedule", label: "Schedule" },
+      { href: "/dashboard/activity", label: "Activity" }
     ];
   }
 
@@ -78,6 +81,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-background">
+      <GlobalNotification />
       <Header />
       <div className="flex w-full">
         <aside className="hidden min-h-[calc(100vh-4rem)] w-72 shrink-0 border-r bg-muted/20 px-5 py-6 md:block">

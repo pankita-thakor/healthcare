@@ -9,6 +9,7 @@ import {
   type BookableProviderSlot
 } from "@/services/appointments/service";
 import { Button } from "@/components/ui/button";
+import { showNotification } from "@/components/layout/GlobalNotification";
 
 export function AppointmentForm({ patientId, defaultProviderId = "" }: { patientId: string; defaultProviderId?: string }) {
   const [providerId, setProviderId] = useState(defaultProviderId);
@@ -16,27 +17,10 @@ export function AppointmentForm({ patientId, defaultProviderId = "" }: { patient
   const [slots, setSlots] = useState<BookableProviderSlot[]>([]);
   const [providerProfiles, setProviderProfiles] = useState<BookableProviderProfile[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(true);
-  const [status, setStatus] = useState("");
-  const [successPopup, setSuccessPopup] = useState<{
-    providerName: string;
-    slotLabel: string;
-  } | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!successPopup) return;
-
-    const timer = window.setTimeout(() => {
-      setSuccessPopup(null);
-    }, 3200);
-
-    return () => window.clearTimeout(timer);
-  }, [successPopup]);
 
   useEffect(() => {
     async function load() {
       try {
-        setError(null);
         const upcomingSlots = await fetchBookableProviderSlots();
         setSlots(upcomingSlots);
         const providerIds = Array.from(new Set(upcomingSlots.map((slot) => slot.provider_id)));
@@ -47,7 +31,7 @@ export function AppointmentForm({ patientId, defaultProviderId = "" }: { patient
       } catch (err) {
         setSlots([]);
         setProviderProfiles([]);
-        setError((err as Error).message);
+        showNotification((err as Error).message, "error");
       } finally {
         setLoadingSlots(false);
       }
@@ -102,80 +86,36 @@ export function AppointmentForm({ patientId, defaultProviderId = "" }: { patient
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
-    setStatus("");
 
     const selectedSlot = availableSlots.find((slot) => slot.slot_start === slotStart);
     if (!selectedSlot) {
-      setError("Select an available slot before booking.");
+      showNotification("Select an available slot before booking.", "error");
       return;
     }
 
-    await bookAppointment({
-      patientId,
-      providerId,
-      startTime: selectedSlot.slot_start,
-      endTime: selectedSlot.slot_end,
-      reason: `Booked slot with ${selectedSlot.provider_name ?? "provider"}`
-    });
+    try {
+      await bookAppointment({
+        patientId,
+        providerId,
+        startTime: selectedSlot.slot_start,
+        endTime: selectedSlot.slot_end,
+        reason: `Booked slot with ${selectedSlot.provider_name ?? "provider"}`
+      });
 
-    setStatus("Appointment requested successfully.");
-    setSuccessPopup({
-      providerName: selectedSlot.provider_name ?? "Provider",
-      slotLabel: new Date(selectedSlot.slot_start).toLocaleString()
-    });
-    setSlotStart("");
+      showNotification(`Appointment booked with ${selectedSlot.provider_name ?? "Provider"}!`);
+      setSlotStart("");
 
-    const refreshedSlots = await fetchBookableProviderSlots();
-    setSlots(refreshedSlots);
-    const providerIds = Array.from(new Set(refreshedSlots.map((slot) => slot.provider_id)));
-    setProviderProfiles(await fetchBookableProviderProfiles(providerIds));
+      const refreshedSlots = await fetchBookableProviderSlots();
+      setSlots(refreshedSlots);
+      const providerIds = Array.from(new Set(refreshedSlots.map((slot) => slot.provider_id)));
+      setProviderProfiles(await fetchBookableProviderProfiles(providerIds));
+    } catch (err) {
+      showNotification((err as Error).message, "error");
+    }
   }
 
   return (
     <div className="relative">
-      {successPopup && (
-        <div className="pointer-events-none fixed bottom-6 right-6 z-50 max-w-sm animate-[fade-in_0.25s_ease-out]">
-          <div className="rounded-2xl border border-emerald-200 bg-white/95 p-4 shadow-2xl backdrop-blur dark:border-emerald-800 dark:bg-slate-950/95">
-            <div className="flex items-start gap-3">
-              <div className="mt-1 flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
-                ✓
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">Appointment booked successfully</p>
-                <p className="text-sm text-muted-foreground">
-                  {successPopup.providerName} on {successPopup.slotLabel}
-                </p>
-              </div>
-            </div>
-            <div className="mt-3 h-1 overflow-hidden rounded-full bg-emerald-100 dark:bg-emerald-950">
-              <div className="h-full w-full origin-left animate-[shrink_3s_linear_forwards] rounded-full bg-emerald-500" />
-            </div>
-          </div>
-        </div>
-      )}
-
-      <style jsx>{`
-        @keyframes fade-in {
-          from {
-            opacity: 0;
-            transform: translateY(12px) scale(0.98);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-          }
-        }
-        @keyframes shrink {
-          from {
-            transform: scaleX(1);
-          }
-          to {
-            transform: scaleX(0);
-          }
-        }
-      `}</style>
-
       <form onSubmit={onSubmit} className="grid gap-3 md:grid-cols-3">
         <select
           className="h-10 rounded-md border border-input bg-background px-3 text-sm"
@@ -216,9 +156,7 @@ export function AppointmentForm({ patientId, defaultProviderId = "" }: { patient
           ))}
         </select>
 
-        {error && <p className="text-sm text-destructive md:col-span-3">{error}</p>}
-        {status && <p className="text-sm text-emerald-600 md:col-span-3">{status}</p>}
-        {!loadingSlots && !error && providerOptions.length === 0 && (
+        {!loadingSlots && providerOptions.length === 0 && (
           <p className="text-sm text-muted-foreground md:col-span-3">
             No providers have open slots yet. Ask a doctor to add availability in the schedule tab.
           </p>

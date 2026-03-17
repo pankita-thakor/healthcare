@@ -6,6 +6,9 @@ import { completeRecoverySession, updatePassword } from "@/services/auth/service
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
+const fieldClassName =
+  "h-12 rounded-xl border-border/60 bg-background/80 px-4 text-sm shadow-sm transition focus-visible:ring-2 focus-visible:ring-primary/30";
+
 export function ResetPasswordForm() {
   const router = useRouter();
   const [password, setPassword] = useState("");
@@ -58,26 +61,46 @@ export function ResetPasswordForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-4">
-      {status && <p className="text-sm text-muted-foreground">{status}</p>}
-      {error && <p className="text-sm text-destructive">{error}</p>}
-      <Input
-        type="password"
-        placeholder="New password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        disabled={!ready || saving}
-        required
-      />
-      <Input
-        type="password"
-        placeholder="Confirm new password"
-        value={confirmPassword}
-        onChange={(e) => setConfirmPassword(e.target.value)}
-        disabled={!ready || saving}
-        required
-      />
-      <Button type="submit" className="w-full" disabled={!ready || saving}>
+    <form onSubmit={onSubmit} className="space-y-5">
+      {status && <p className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-primary">{status}</p>}
+      {error && <p className="rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">{error}</p>}
+
+      <div className="space-y-2">
+        <label htmlFor="reset-password" className="text-sm font-semibold text-foreground">
+          New password
+        </label>
+        <Input
+          id="reset-password"
+          type="password"
+          placeholder="Create a new password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          disabled={!ready || saving}
+          className={fieldClassName}
+          required
+        />
+      </div>
+
+      <div className="space-y-2">
+        <div className="flex items-center justify-between gap-3">
+          <label htmlFor="reset-confirm-password" className="text-sm font-semibold text-foreground">
+            Confirm password
+          </label>
+          <span className="text-xs text-muted-foreground">Use at least 8 characters</span>
+        </div>
+        <Input
+          id="reset-confirm-password"
+          type="password"
+          placeholder="Repeat your new password"
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          disabled={!ready || saving}
+          className={fieldClassName}
+          required
+        />
+      </div>
+
+      <Button type="submit" className="h-12 w-full rounded-xl text-sm font-bold shadow-lg shadow-primary/20" disabled={!ready || saving}>
         {saving ? "Updating password..." : "Update password"}
       </Button>
     </form>

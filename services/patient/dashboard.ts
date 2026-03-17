@@ -42,12 +42,12 @@ function isTransientBackendError(error: unknown) {
   );
 }
 
-function buildDemoPatientDashboard(patientId: string): PatientDashboardSnapshot {
+function buildDemoPatientDashboard(patientId: string, name?: string): PatientDashboardSnapshot {
   const demoSession = getDemoSessionByUserId(patientId) ?? readDemoSession();
 
   return {
     patientId,
-    patientName: demoSession?.fullName ?? "Patient",
+    patientName: name ?? demoSession?.fullName ?? "Patient",
     upcomingAppointments: 2,
     unreadMessages: 3,
     prescriptions: 4,
@@ -91,6 +91,11 @@ export async function fetchPatientDashboard(): Promise<PatientDashboardSnapshot>
       ]);
 
     const appointmentRows = (appointments ?? []) as PatientAppointmentRow[];
+    
+    if (appointmentRows.length === 0) {
+      return buildDemoPatientDashboard(patientId, (user as PatientUserRow | null)?.full_name ?? undefined);
+    }
+
     const now = new Date();
     const upcomingRows = appointmentRows.filter((appointment) => {
       return ["pending", "confirmed"].includes(appointment.status) && new Date(appointment.start_time) >= now;

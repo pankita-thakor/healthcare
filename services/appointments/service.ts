@@ -2,6 +2,7 @@ import { createBrowserClient } from "@/lib/supabase";
 import { getClientUserId } from "@/lib/client-auth";
 import { isDemoUserId } from "@/lib/demo-session";
 import { readSyncedProviderSlots } from "@/lib/slot-sync";
+import { logActivity } from "@/services/activity/service";
 
 const supabase = createBrowserClient();
 const DEMO_BOOKINGS_KEY = "hf_demo_bookings";
@@ -383,6 +384,7 @@ export async function bookAppointment(input: {
     });
 
     if (!rpcError) {
+      logActivity("Booked Appointment", `Confirmed slot for ${new Date(input.startTime).toLocaleString()}`, "appointment");
       return rpcData;
     }
 
@@ -417,6 +419,7 @@ export async function bookAppointment(input: {
       .single();
 
     if (error) throw error;
+    logActivity("Requested Appointment", `Requested slot for ${new Date(input.startTime).toLocaleString()}`, "appointment");
     return data;
   } catch (err) {
     if (shouldUseDemoFallback || err instanceof Error) {
@@ -431,6 +434,7 @@ export async function bookAppointment(input: {
       };
 
       writeDemoBookings([...readDemoBookings(), booking]);
+      logActivity("Requested Appointment", `Demo: Requested slot for ${new Date(input.startTime).toLocaleString()}`, "appointment");
       return booking;
     }
 

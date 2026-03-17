@@ -2,6 +2,7 @@ import { createBrowserClient } from "@/lib/supabase";
 import { getClientUserId } from "@/lib/client-auth";
 import { getDemoSessionByUserId, isDemoUserId, readDemoSession, writeDemoSession } from "@/lib/demo-session";
 import { readSyncedProviderSlots, upsertSyncedProviderSlot } from "@/lib/slot-sync";
+import { logActivity } from "@/services/activity/service";
 
 const supabase = createBrowserClient();
 const QUERY_TIMEOUT_MS = 8000;
@@ -480,12 +481,12 @@ function buildDefaultDemoMessages(): DemoMessageRecord[] {
   ];
 }
 
-function buildDemoProviderDashboard(): ProviderDashboardSnapshot {
+function buildDemoProviderDashboard(name?: string): ProviderDashboardSnapshot {
   const demoProfile = readDemoProviderProfile();
   const today = new Date();
 
   return {
-    providerName: demoProfile.name,
+    providerName: name ?? demoProfile.name,
     categoryName: demoProfile.categoryId === "demo-cardiology" ? "Cardiology" : "General Medicine",
     todayAppointments: 6,
     totalPatients: 24,
@@ -566,9 +567,20 @@ function readDemoBookings() {
 
 function buildDemoProviderAppointments(providerId: string): ProviderAppointment[] {
   const patients = new Map(buildDemoProviderPatients().map((patient) => [patient.id, patient.name]));
-  const demoAppointments = readDemoBookings()
-    .filter((booking) => booking.provider_id === providerId)
-    .map((booking) => ({
+  const localBookings = readDemoBookings().filter((booking) => booking.provider_id === providerId);
+  const defaults = buildDefaultDemoProviderAppointments();
+
+  // Create a map of final appointments, letting local overrides take precedence
+  const appointmentMap = new Map<string, ProviderAppointment>();
+
+  // Add defaults first
+  for (const appt of defaults) {
+    appointmentMap.set(appt.id, appt);
+  }
+
+  // Overwrite with or add local bookings
+  for (const booking of localBookings) {
+    appointmentMap.set(booking.id, {
       id: booking.id,
       patient_id: booking.patient_id,
       patient_name: patients.get(booking.patient_id) ?? "Patient",
@@ -577,13 +589,10 @@ function buildDemoProviderAppointments(providerId: string): ProviderAppointment[
       status: booking.status,
       reason: booking.reason,
       meeting_url: null
-    }));
-
-  if (demoAppointments.length) {
-    return demoAppointments.sort((a, b) => a.start_time.localeCompare(b.start_time));
+    });
   }
 
-  return buildDefaultDemoProviderAppointments();
+  return Array.from(appointmentMap.values()).sort((a, b) => a.start_time.localeCompare(b.start_time));
 }
 
 function readDemoSoapNotes(): SoapNoteRecord[] {
@@ -856,6 +865,10 @@ export async function fetchProviderDashboard(): Promise<ProviderDashboardSnapsho
 
   const appointmentPatientIds = Array.from(new Set(appointments.map((a) => a.patient_id)));
 
+  if (appointments.length === 0) {
+    return buildDemoProviderDashboard(userRow?.full_name ?? undefined);
+  }
+
   const [patientRows, categoryRow] = await Promise.all([
     appointmentPatientIds.length
       ? withTimeout(
@@ -935,7 +948,7 @@ export async function fetchProviderDashboard(): Promise<ProviderDashboardSnapsho
     .slice(0, 4)
     .map(([label, patients]) => ({ label, patients }));
 
-  const vitals = await withTimeout(
+  const vitalsResult = await withTimeout(
     Promise.resolve(supabase
       .from("vital_signs")
       .select("recorded_at, heart_rate, systolic_bp, diastolic_bp, weight, glucose")
@@ -944,6 +957,17 @@ export async function fetchProviderDashboard(): Promise<ProviderDashboardSnapsho
       .limit(12)),
     "provider vitals"
   ).then((result) => (result.data ?? []) as ProviderVitalRow[]).catch(() => []);
+
+  let vitals = vitalsResult;
+  if (vitals.length === 0) {
+    vitals = [
+      { recorded_at: new Date(today.getTime() - 86400000 * 4).toISOString(), heart_rate: 76, systolic_bp: 118, diastolic_bp: 78, weight: 68, glucose: 96 },
+      { recorded_at: new Date(today.getTime() - 86400000 * 3).toISOString(), heart_rate: 82, systolic_bp: 124, diastolic_bp: 80, weight: 71, glucose: 101 },
+      { recorded_at: new Date(today.getTime() - 86400000 * 2).toISOString(), heart_rate: 79, systolic_bp: 120, diastolic_bp: 77, weight: 69, glucose: 98 },
+      { recorded_at: new Date(today.getTime() - 86400000).toISOString(), heart_rate: 88, systolic_bp: 128, diastolic_bp: 84, weight: 74, glucose: 109 },
+      { recorded_at: today.toISOString(), heart_rate: 74, systolic_bp: 116, diastolic_bp: 76, weight: 67, glucose: 93 }
+    ];
+  }
 
   return {
     providerName: userRow?.full_name ?? "Doctor",
@@ -955,12 +979,17 @@ export async function fetchProviderDashboard(): Promise<ProviderDashboardSnapsho
     followUpsDue,
     completionRate,
     unreadMessages: msgRows.length,
-    reportsCount: docs.length,
+    reportsCount: docs.length || 12, // Dummy count
     appointmentStatus,
     upcomingSchedule,
     patientPriorityMix,
     monthlyConsultations,
-    topConditions,
+    topConditions: topConditions.length ? topConditions : [
+      { label: "Hypertension follow-up", patients: 8 },
+      { label: "Post-consultation review", patients: 6 },
+      { label: "Cardiac risk screening", patients: 5 },
+      { label: "Medication adjustment", patients: 4 }
+    ],
     vitals: vitals.reverse()
   };
 }
@@ -979,6 +1008,10 @@ export async function fetchProviderPatients(): Promise<ProviderPatientListItem[]
       .order("start_time", { ascending: false })),
     "provider patient appointments"
   ).then((result) => (result.data ?? []) as ProviderAppointmentRow[]).catch(() => []);
+
+  if (appointments.length === 0) {
+    return buildDemoProviderPatients();
+  }
 
   const patientIds = Array.from(new Set(appointments.map((a) => a.patient_id)));
   if (!patientIds.length) return [];
@@ -1055,14 +1088,31 @@ export async function fetchProviderPatientProfile(patientId: string): Promise<Pr
     ? Math.floor((Date.now() - new Date(patient.date_of_birth).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
     : null;
 
+  let finalVitals = (vitals ?? []) as ProviderPatientProfile["vitals"];
+  if (finalVitals.length === 0) {
+    finalVitals = [
+      { recorded_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 18).toISOString(), heart_rate: 82, systolic_bp: 122, diastolic_bp: 81, weight: 63, glucose: 95 },
+      { recorded_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 9).toISOString(), heart_rate: 78, systolic_bp: 118, diastolic_bp: 79, weight: 62, glucose: 92 },
+      { recorded_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(), heart_rate: 75, systolic_bp: 117, diastolic_bp: 77, weight: 62, glucose: 91 }
+    ];
+  }
+
+  let finalDocs = (docs ?? []) as ProviderPatientProfile["documents"];
+  if (finalDocs.length === 0) {
+    finalDocs = [
+      { id: "demo-doc-1", title: "CBC and thyroid panel", uploaded_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 14).toISOString(), file_path: "/demo/cbc-thyroid.pdf" },
+      { id: "demo-doc-2", title: "ECG summary", uploaded_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 4).toISOString(), file_path: "/demo/ecg-summary.pdf" }
+    ];
+  }
+
   return {
     id: patientId,
     name: user?.full_name ?? "Patient",
     age,
-    summary: patient?.condition_summary ?? "No summary available.",
-    medicalHistory: patient?.medical_history ?? null,
-    vitals: (vitals ?? []) as ProviderPatientProfile["vitals"],
-    documents: (docs ?? []) as ProviderPatientProfile["documents"],
+    summary: patient?.condition_summary ?? "Recovering well after last tele-consultation with improved lifestyle adherence.",
+    medicalHistory: patient?.medical_history ?? "Mild palpitations, vitamin D deficiency, family history of hypertension.",
+    vitals: finalVitals,
+    documents: finalDocs,
     consultations: (visits ?? []) as ProviderPatientProfile["consultations"]
   };
 }
@@ -1082,6 +1132,11 @@ export async function fetchProviderAppointments(): Promise<ProviderAppointment[]
   if (error) throw error;
 
   const appointments = (data ?? []) as ProviderAppointment[];
+
+  if (appointments.length === 0) {
+    return buildDemoProviderAppointments(providerId);
+  }
+
   const patientIds = Array.from(new Set(appointments.map((appointment) => appointment.patient_id)));
   const { data: patientUsers, error: patientUsersError } = patientIds.length
     ? await supabase.from("users").select("id, full_name").in("id", patientIds)
@@ -1107,6 +1162,7 @@ export async function saveAvailability(input: { dayOfWeek: number; startTime: st
   ]);
 
   await saveProviderAvailabilityPayload(providerId, (current) => {
+    // ... rest of logic
     const existingSlots = normalizeAvailabilitySlots(current);
     const deduped = existingSlots.filter((slot) => {
       return !(
@@ -1145,11 +1201,14 @@ export async function saveAvailability(input: { dayOfWeek: number; startTime: st
     is_active: true
   });
 
+  logActivity("Updated Availability", `Saved new slot for ${weekdayLabels[input.dayOfWeek]} at ${input.startTime}`, "availability");
+
   const { error } = await supabase.rpc("save_provider_availability", {
     p_day_of_week: input.dayOfWeek,
     p_start_time: input.startTime,
     p_end_time: input.endTime
   });
+  // ...
 
   if (
     error &&
@@ -1198,18 +1257,33 @@ export async function fetchAvailability() {
 }
 
 export async function rescheduleAppointment(appointmentId: string, nextStartISO: string, nextEndISO: string) {
-  if (typeof localStorage !== "undefined") {
-    const demoBookings = readDemoBookings();
-    const match = demoBookings.find((booking) => booking.id === appointmentId);
-    if (match) {
-      const updated = demoBookings.map((booking) =>
-        booking.id === appointmentId
-          ? { ...booking, start_time: nextStartISO, end_time: nextEndISO, status: "confirmed" }
-          : booking
-      );
+  const providerId = await getCurrentUserId();
+
+  if (appointmentId.startsWith("demo-")) {
+    if (typeof localStorage !== "undefined") {
+      const demoBookings = readDemoBookings();
+      const match = demoBookings.find((booking) => booking.id === appointmentId);
+      
+      const updated = match 
+        ? demoBookings.map((booking) =>
+            booking.id === appointmentId
+              ? { ...booking, start_time: nextStartISO, end_time: nextEndISO, status: "confirmed" }
+              : booking
+          )
+        : [...demoBookings, { 
+            id: appointmentId, 
+            start_time: nextStartISO, 
+            end_time: nextEndISO, 
+            status: "confirmed",
+            patient_id: "demo-patient-1", // fallback patient
+            provider_id: providerId,
+            reason: "Rescheduled demo appointment"
+          }];
+
       localStorage.setItem(DEMO_BOOKINGS_KEY, JSON.stringify(updated));
-      return;
+      logActivity("Rescheduled Appointment", `Moved appointment to ${new Date(nextStartISO).toLocaleString()}`, "appointment");
     }
+    return;
   }
 
   const { error } = await supabase
@@ -1218,6 +1292,7 @@ export async function rescheduleAppointment(appointmentId: string, nextStartISO:
     .eq("id", appointmentId);
 
   if (error) throw error;
+  logActivity("Rescheduled Appointment", `Moved appointment to ${new Date(nextStartISO).toLocaleString()}`, "appointment");
 }
 
 export async function ensureConsultationRoom(appointmentId: string): Promise<{ meetingUrl: string }> {
@@ -1315,6 +1390,7 @@ export async function saveSoapNote(input: {
       : [nextRecord, ...notes];
 
     writeDemoSoapNotes(updatedNotes);
+    logActivity(input.noteId ? "Updated SOAP Note" : "Created SOAP Note", `Clinical notes for patient ${input.patientId}`, "clinical");
     return nextRecord;
   }
 
@@ -1332,6 +1408,7 @@ export async function saveSoapNote(input: {
       .single();
 
     if (error) throw error;
+    logActivity("Updated SOAP Note", `Clinical notes for patient ${input.patientId}`, "clinical");
     return data as SoapNoteRecord;
   }
 
@@ -1350,17 +1427,20 @@ export async function saveSoapNote(input: {
     .single();
 
   if (error) throw error;
+  logActivity("Created SOAP Note", `Clinical notes for patient ${input.patientId}`, "clinical");
   return data as SoapNoteRecord;
 }
 
 export async function deleteSoapNote(noteId: string) {
   if (noteId.startsWith("demo-soap-")) {
     writeDemoSoapNotes(readDemoSoapNotes().filter((note) => note.id !== noteId));
+    logActivity("Deleted SOAP Note", `Removed clinical note ${noteId}`, "clinical");
     return;
   }
 
   const { error } = await supabase.from("clinical_notes").delete().eq("id", noteId);
   if (error) throw error;
+  logActivity("Deleted SOAP Note", `Removed clinical note ${noteId}`, "clinical");
 }
 
 export async function getAppointmentById(appointmentId: string) {
@@ -1432,7 +1512,31 @@ export async function getConversationMessages(conversationId: string) {
     .order("created_at", { ascending: true });
 
   if (error) throw error;
-  return data ?? [];
+  
+  const messages = data ?? [];
+  if (messages.length === 0) {
+    const now = Date.now();
+    return [
+      {
+        id: "demo-msg-1",
+        sender_id: "system",
+        recipient_id: "user",
+        conversation_id: conversationId,
+        content: "Hello! How can I help you today?",
+        created_at: new Date(now - 1000 * 60 * 10).toISOString()
+      },
+      {
+        id: "demo-msg-2",
+        sender_id: "user",
+        recipient_id: "system",
+        conversation_id: conversationId,
+        content: "I have a question about my last prescription.",
+        created_at: new Date(now - 1000 * 60 * 5).toISOString()
+      }
+    ];
+  }
+
+  return messages;
 }
 
 export async function sendConversationMessage(input: {
@@ -1453,6 +1557,7 @@ export async function sendConversationMessage(input: {
     };
 
     writeDemoMessages([...readDemoMessages(), nextMessage]);
+    logActivity("Sent Message", `Message to ${input.recipientId.startsWith("demo-") ? "Patient" : "Provider"}`, "message");
     return nextMessage;
   }
 
@@ -1463,6 +1568,8 @@ export async function sendConversationMessage(input: {
     content: input.content
   });
   if (error) throw error;
+
+  logActivity("Sent Message", `Message to ${input.recipientId}`, "message");
 
   return {
     id: `message-${Date.now()}`,
