@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { subscribeToMessages, sendMessage } from "@/services/messages/service";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,20 @@ interface LocalChatMessage {
   sender_id: string;
   recipient_id: string;
   created_at?: string;
+}
+
+function isLocalChatMessage(value: unknown): value is LocalChatMessage {
+  if (!value || typeof value !== "object") return false;
+
+  const message = value as Record<string, unknown>;
+
+  return (
+    typeof message.id === "string" &&
+    typeof message.content === "string" &&
+    typeof message.sender_id === "string" &&
+    typeof message.recipient_id === "string" &&
+    (message.created_at === undefined || typeof message.created_at === "string")
+  );
 }
 
 export function ChatPanel({ userId, peerId, peerName }: { userId: string; peerId: string; peerName?: string }) {
@@ -32,20 +46,21 @@ export function ChatPanel({ userId, peerId, peerName }: { userId: string; peerId
       const raw = localStorage.getItem("hf_demo_messages");
       if (raw) {
         try {
-          const allDemo = JSON.parse(raw) as any[];
+          const parsed: unknown = JSON.parse(raw);
+          const allDemo = Array.isArray(parsed) ? parsed.filter(isLocalChatMessage) : [];
           const relevant = allDemo
-            .filter((m: any) => 
+            .filter((m) =>
               (m.sender_id === userId && m.recipient_id === peerId) ||
               (m.sender_id === peerId && m.recipient_id === userId)
             )
-            .map((m: any) => ({
+            .map((m) => ({
               id: m.id,
               content: m.content,
               sender_id: m.sender_id,
               recipient_id: m.recipient_id,
               created_at: m.created_at
-            } as LocalChatMessage));
-          
+            }));
+
           setMessages(relevant);
         } catch (e) {
           console.error("Failed to parse demo messages", e);
@@ -54,15 +69,8 @@ export function ChatPanel({ userId, peerId, peerName }: { userId: string; peerId
     }
 
     const channel = subscribeToMessages(userId, peerId, (payload) => {
-      if (payload.new) {
-        const msg = payload.new as any;
-        setMessages((prev) => [...prev, {
-          id: msg.id,
-          content: msg.content,
-          sender_id: msg.sender_id,
-          recipient_id: msg.recipient_id,
-          created_at: msg.created_at
-        } as LocalChatMessage]);
+      if (isLocalChatMessage(payload.new)) {
+        setMessages((prev) => [...prev, payload.new]);
       }
     });
 
@@ -71,7 +79,7 @@ export function ChatPanel({ userId, peerId, peerName }: { userId: string; peerId
     };
   }, [peerId, userId]);
 
-  async function onSend(e: React.FormEvent) {
+  async function onSend(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!value.trim()) return;
     try {
