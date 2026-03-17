@@ -303,7 +303,7 @@ export default function ProviderSchedulePage() {
 
                           <div className="bg-muted/30 rounded-lg p-2.5 mb-4">
                             <p className="text-[10px] leading-relaxed text-muted-foreground font-medium italic">
-                              &quot;{appointment.reason ?? "Initial consultation regarding general wellness and follow-up."}&quot;
+                              &quot;{appointment.reason ?? 'Initial consultation regarding general wellness and follow-up.'}&quot;
                             </p>
                           </div>
 

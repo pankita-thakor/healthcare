@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -116,7 +116,7 @@ export default function ProviderPatientProfilePage() {
                   </span>
                 </div>
                 <p className="text-xs font-medium text-muted-foreground leading-relaxed italic">
-                  &quot;{visit.reason ?? "No clinical reason provided."}&quot;
+                  &quot;{visit.reason ?? 'No clinical reason provided.'}&quot;
                 </p>
               </div>
             ))}
