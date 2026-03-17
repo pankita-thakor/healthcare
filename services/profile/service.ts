@@ -36,17 +36,17 @@ export async function fetchCurrentAccountProfile(): Promise<AccountProfile> {
     .from("users")
     .select("id, full_name, email, phone, role, status")
     .eq("id", user.id)
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
 
   return {
-    id: data.id,
-    fullName: data.full_name ?? "",
-    email: data.email ?? user.email ?? "",
-    phone: data.phone ?? "",
-    role: data.role as UserRole,
-    status: data.status ?? "active"
+    id: data?.id ?? user.id,
+    fullName: data?.full_name ?? (user.user_metadata?.full_name as string | undefined) ?? "",
+    email: data?.email ?? user.email ?? "",
+    phone: data?.phone ?? (user.phone as string | undefined) ?? "",
+    role: (data?.role as UserRole | undefined) ?? ((user.user_metadata?.role as UserRole | undefined) ?? "patient"),
+    status: data?.status ?? "active"
   };
 }
 

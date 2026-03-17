@@ -65,11 +65,9 @@ export function AccountProfileForm() {
         placeholder="Phone"
         required
       />
-      <Input value={profile.email} disabled className="md:col-span-2 opacity-80" />
       <div className="md:col-span-2 flex flex-wrap gap-3 text-sm text-muted-foreground">
         <span>Role: {profile.role}</span>
         <span>Status: {profile.status}</span>
-        <span>Email cannot be changed from this page.</span>
       </div>
       {error && <p className="text-sm text-destructive md:col-span-2">{error}</p>}
       {status && <p className="text-sm text-emerald-600 md:col-span-2">{status}</p>}

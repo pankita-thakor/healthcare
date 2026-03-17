@@ -733,17 +733,21 @@ export async function fetchProviderProfileDetails(): Promise<ProviderProfileDeta
   }
 
   try {
+    const {
+      data: { user: authUser }
+    } = await supabase.auth.getUser();
+
     const [{ data: user }, { data: provider }] = await Promise.all([
-      supabase.from("users").select("full_name, phone").eq("id", providerId).single(),
+      supabase.from("users").select("full_name, phone").eq("id", providerId).maybeSingle(),
       supabase
         .from("providers")
         .select("license_number, category_id, experience, hospital, bio, availability")
         .eq("user_id", providerId)
-        .single()
+        .maybeSingle()
     ]);
 
     return {
-      name: user?.full_name ?? "",
+      name: user?.full_name ?? (authUser?.user_metadata?.full_name as string | undefined) ?? "",
       phone: user?.phone ?? "",
       licenseNumber: provider?.license_number ?? "",
       categoryId: provider?.category_id ?? "",
@@ -778,6 +782,9 @@ export async function saveProviderProfileDetails(input: ProviderProfileDetails) 
 
   let specializationName: string | null = null;
   const currentAvailability = await fetchProviderAvailabilityPayload(providerId);
+  const {
+    data: { user: authUser }
+  } = await supabase.auth.getUser();
 
   if (input.categoryId) {
     const { data: category } = await supabase
@@ -791,6 +798,7 @@ export async function saveProviderProfileDetails(input: ProviderProfileDetails) 
   const { error: userError } = await supabase.from("users").upsert(
     {
       id: providerId,
+      email: authUser?.email ?? "",
       full_name: input.name,
       phone: input.phone,
       role: "provider",
