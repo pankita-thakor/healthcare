@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState, useRef } from "react";
 import { subscribeToMessages, sendMessage } from "@/services/messages/service";
@@ -11,6 +11,7 @@ interface ChatMessage {
   id: string;
   content: string;
   sender_id: string;
+  recipient_id: string;
   created_at?: string;
 }
 
@@ -64,6 +65,7 @@ export function ChatPanel({ userId, peerId, peerName }: { userId: string; peerId
         id: `local-${Date.now()}`,
         content: value,
         sender_id: userId,
+        recipient_id: peerId,
         created_at: new Date().toISOString()
       };
       setMessages(prev => [...prev, nextMsg]);

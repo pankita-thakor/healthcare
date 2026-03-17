@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { getPostLoginPath, login, persistLocalAuthState } from "@/services/auth/service";
+import { usePageLoader } from "@/components/layout/CreativeLoader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -12,18 +13,21 @@ export function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const { setLoading } = usePageLoader();
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     try {
       const user = await login(email, password);
+      setLoading(true);
       persistLocalAuthState(user.id, user.role);
 
       const nextPath = await getPostLoginPath(user.id, user.role);
       window.location.href = nextPath;
     } catch (err) {
       setError((err as Error).message);
+      setLoading(false);
     }
   }
 

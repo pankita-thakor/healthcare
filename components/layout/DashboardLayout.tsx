@@ -9,6 +9,7 @@ import { getClientRole } from "@/lib/client-auth";
 import { cn } from "@/lib/utils";
 import { Header } from "@/components/layout/Header";
 import { GlobalNotification } from "@/components/layout/GlobalNotification";
+import { usePageLoader } from "@/components/layout/CreativeLoader";
 
 type Role = "patient" | "provider" | "admin";
 type NavLink = { href: Route; label: string };
@@ -42,6 +43,7 @@ function roleLinks(role: Role | null): NavLink[] {
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [role, setRole] = useState<Role | null>(null);
+  const { setLoading } = usePageLoader();
 
   useEffect(() => {
     const cookieRole = getClientRole();
@@ -91,6 +93,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               <Link
                 key={String(link.href)}
                 href={link.href as Route}
+                onClick={() => setLoading(true)}
                 className={cn(
                   "block rounded-md px-3 py-2 text-sm",
                   pathname === link.href ? "bg-primary text-primary-foreground" : "hover:bg-muted"
@@ -108,6 +111,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               <Link
                 key={String(link.href)}
                 href={link.href as Route}
+                onClick={() => setLoading(true)}
                 className={cn(
                   "whitespace-nowrap rounded-md border px-3 py-2 text-sm",
                   pathname === link.href ? "bg-primary text-primary-foreground" : "hover:bg-muted"
