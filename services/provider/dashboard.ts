@@ -338,7 +338,7 @@ function buildDemoPatientProfile(patientId: string): ProviderPatientProfile {
       reason: appointment.reason
     }));
 
-  const profiles: Record<string, Omit<ProviderPatientProfile, "id" | "name" | "age" | "consultations">> = {
+  const profiles: Record<string, Omit<ProviderPatientProfile, "id" | "name" | "age" | "consultations" | "soapNotes">> = {
     "demo-patient-1": {
       summary: "Recovering well after last tele-consultation with improved lifestyle adherence.",
       medicalHistory: "Mild palpitations, vitamin D deficiency, family history of hypertension.",
