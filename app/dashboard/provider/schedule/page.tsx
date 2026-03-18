@@ -615,11 +615,11 @@ export default function ProviderSchedulePage() {
                       {day.appointments.map((appointment) => (
                         <div key={appointment.id} className="rounded-[1.5rem] border border-border/40 bg-background p-5 shadow-sm hover:shadow-xl transition-all duration-500 group/appt">
                           <div className="flex items-start justify-between gap-3 mb-4">
-                            <div className="space-y-1">
+                            <div className="space-y-1.5">
                               <p className="text-sm font-black tracking-tight text-foreground/90">
                                 {format(new Date(appointment.start_time), "HH:mm")}
                               </p>
-                              <p className="text-xs font-bold text-muted-foreground hover:text-primary transition-colors cursor-pointer">
+                              <p className="text-sm font-bold text-foreground hover:text-primary transition-colors cursor-pointer">
                                 {appointment.patient_name ?? "Patient"}
                               </p>
                             </div>

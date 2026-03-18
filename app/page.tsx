@@ -274,7 +274,7 @@ export default function HomePage() {
             >
               <HeartPulse className="h-6 w-6" />
             </motion.div>
-            <span className="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70">
+            <span className="font-display text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70">
               Healthyfy
             </span>
           </Link>
@@ -846,7 +846,7 @@ export default function HomePage() {
                 <div className="h-12 w-12 rounded-2xl bg-primary text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/20">
                   <HeartPulse className="h-7 w-7" />
                 </div>
-                <span className="text-2xl font-black tracking-tight">Healthyfy</span>
+                <span className="font-display text-2xl font-black tracking-tight">Healthyfy</span>
               </Link>
               <p className="max-w-md text-xl text-muted-foreground font-medium leading-relaxed">
                 We&apos;re building the infrastructure for a healthier world. One consultation, one AI insight, and one family at a time.

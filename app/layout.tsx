@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Roboto } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { LoadingProvider } from "@/components/layout/CreativeLoader";
 
-const inter = Inter({ subsets: ["latin"] });
+const roboto = Roboto({ weight: ["400", "500", "700"], subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Healthyfy | Smart Care for Everyday Health",
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
+      <body className={roboto.className}>
         <ThemeProvider>
           <LoadingProvider>
             {children}

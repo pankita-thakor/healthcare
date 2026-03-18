@@ -43,6 +43,20 @@ export function AuthShell({
         <div className="absolute bottom-[-8%] right-[-4%] h-[28rem] w-[28rem] rounded-full bg-cyan-400/10 blur-[150px]" />
         <div className="absolute inset-0 bg-[linear-gradient(to_right,hsl(var(--border)/0.14)_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border)/0.14)_1px,transparent_1px)] bg-[size:88px_88px] opacity-20" />
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
+        {/* Abstract decorative shapes */}
+        <div className="absolute left-[10%] top-[15%] h-32 w-32 rounded-[2rem] bg-primary/8 blur-2xl rotate-12" />
+        <div className="absolute right-[15%] top-[25%] h-24 w-24 rounded-full bg-accent/15 blur-xl -rotate-6" />
+        <div className="absolute left-[20%] bottom-[20%] h-40 w-40 rounded-full bg-emerald-400/10 blur-3xl" />
+        <div className="absolute right-[5%] bottom-[30%] h-20 w-20 rounded-[1.5rem] bg-primary/10 blur-xl rotate-45" />
+        <div className="absolute left-[50%] top-[40%] h-16 w-16 rounded-full bg-teal-400/10 blur-2xl" />
+        <svg className="absolute right-0 top-1/4 w-64 h-64 opacity-[0.07]" viewBox="0 0 200 200" fill="none">
+          <path d="M100 20C120 40 180 80 180 100s-40 60-80 80-80 20-100 0-20-60 0-80 80-80 100-100z" fill="currentColor" className="text-primary" />
+        </svg>
+        <svg className="absolute left-0 bottom-1/4 w-48 h-48 opacity-[0.06]" viewBox="0 0 200 200" fill="none">
+          <circle cx="100" cy="100" r="60" stroke="currentColor" strokeWidth="2" className="text-primary" />
+          <circle cx="100" cy="100" r="40" stroke="currentColor" strokeWidth="1.5" className="text-primary" />
+        </svg>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,hsl(var(--primary)/0.08),transparent_50%)]" />
       </div>
 
       <div className="relative grid min-h-screen w-full lg:grid-cols-[minmax(320px,1.1fr)_minmax(420px,0.9fr)]">
@@ -54,7 +68,7 @@ export function AuthShell({
                   <HeartPulse className="h-6 w-6" />
                 </div>
                 <div>
-                  <p className="text-xs font-black uppercase tracking-[0.28em] text-primary">{eyebrow}</p>
+                  <p className="font-display text-xs font-black uppercase tracking-[0.28em] text-primary">{eyebrow}</p>
                   <p className="text-sm text-muted-foreground">Connected healthcare workspace</p>
                 </div>
               </Link>
@@ -64,7 +78,7 @@ export function AuthShell({
                   <Stethoscope className="h-3.5 w-3.5" />
                   Care access, reimagined
                 </div>
-                <h1 className="text-4xl font-black tracking-tight text-foreground xl:text-6xl xl:leading-[0.95]">{asideTitle}</h1>
+                <h1 className="text-2xl font-black tracking-tight text-foreground sm:text-3xl xl:text-4xl xl:leading-[1.1]">{asideTitle}</h1>
                 <p className="max-w-xl text-base leading-7 text-muted-foreground xl:text-lg">{asideDescription}</p>
               </div>
             </div>
@@ -120,17 +134,6 @@ export function AuthShell({
                   <p className="mt-3 text-3xl font-black tracking-tight text-foreground">Fast</p>
                   <p className="mt-2 text-sm text-muted-foreground">Cleaner forms, clearer actions, and smoother transitions on mobile and desktop.</p>
                 </div>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-              <div className="inline-flex items-center gap-2 rounded-full border border-white/50 bg-white/70 px-4 py-2 shadow-sm backdrop-blur dark:border-white/10 dark:bg-background/70">
-                <Activity className="h-4 w-4 text-primary" />
-                Smooth patient and provider flows
-              </div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-white/50 bg-white/70 px-4 py-2 shadow-sm backdrop-blur dark:border-white/10 dark:bg-background/70">
-                <ShieldCheck className="h-4 w-4 text-primary" />
-                Secure account recovery
               </div>
             </div>
           </div>
