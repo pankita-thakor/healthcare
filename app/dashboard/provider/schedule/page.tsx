@@ -46,13 +46,13 @@ function removeAvailabilitySlot(current: ProviderAvailabilitySlot[], target: Pro
   return current.filter((slot) => !slotMatch(slot, target));
 }
 
-function buildUpcomingDatesShort(slot: ProviderAvailabilitySlot) {
+function buildUpcomingDates(slot: ProviderAvailabilitySlot) {
   const now = new Date();
   if (slot.specific_date) {
     const d = new Date(slot.specific_date);
     const [hours, minutes] = slot.start_time.slice(0, 5).split(":").map(Number);
     d.setHours(hours, minutes, 0, 0);
-    if (d >= now) return [d.toLocaleDateString([], { month: "short", day: "numeric" }) + ", " + d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })];
+    if (d >= now) return [d.toLocaleString([], { dateStyle: "short", timeStyle: "short", hour12: false })];
     return [];
   }
   const results: string[] = [];
@@ -65,7 +65,7 @@ function buildUpcomingDatesShort(slot: ProviderAvailabilitySlot) {
     const [hours, minutes] = slot.start_time.slice(0, 5).split(":").map(Number);
     current.setHours(hours, minutes, 0, 0);
     if (current < now) continue;
-    results.push(current.toLocaleDateString([], { month: "short", day: "numeric" }) + ", " + current.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }));
+    results.push(current.toLocaleString([], { dateStyle: "short", timeStyle: "short", hour12: false }));
   }
   return results;
 }
@@ -120,8 +120,8 @@ function buildCalendarDays(
           id: `${slot.id}-${dayKey}-${slotIndex}`,
           start,
           end,
-          startLabel: start.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-          endLabel: end.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+          startLabel: start.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false }),
+          endLabel: end.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false })
         };
       })
       .filter((slot) => slot.end > now)
@@ -372,8 +372,8 @@ export default function ProviderSchedulePage() {
                   onChange={(e) => setSlot((prev) => ({ ...prev, date: e.target.value }))}
                 />
                 {slot.date && (
-                  <p className="text-xs font-medium text-muted-foreground ml-1">
-                    {new Date(slot.date).toLocaleDateString([], { weekday: "long", month: "short", day: "numeric", year: "numeric" })}
+                  <p className="text-xs font-medium text-sky-700 dark:text-sky-300">
+                    {weekdayLabels[new Date(slot.date).getDay()]}, {new Date(slot.date).toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" })}
                   </p>
                 )}
               </div>
@@ -405,97 +405,85 @@ export default function ProviderSchedulePage() {
                 {availability.map((item) => (
                   <div
                     key={item.id}
-                    className="relative overflow-hidden rounded-xl border border-sky-500/20 bg-gradient-to-br from-sky-500/[0.10] via-background to-cyan-400/[0.08] p-2.5 shadow-sm transition-all hover:border-sky-500/35 hover:shadow-md"
+                    className="relative overflow-hidden rounded-xl border border-sky-500/20 bg-gradient-to-br from-sky-500/[0.10] via-background to-cyan-400/[0.08] p-3 shadow-sm transition-all hover:border-sky-500/35 hover:shadow-md"
                   >
                     <div className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-sky-500 to-cyan-400" />
-                    <div className="flex items-center justify-between gap-2 pl-2">
-                      <div className="min-w-0 flex-1">
-                        <p className="font-black text-xs text-foreground truncate">
-                          {slotDisplayLabel(item)}
-                        </p>
-                        <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-sky-700 dark:text-sky-300">
-                          {item.specific_date ? "Specific date" : "Recurring"}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-1 shrink-0">
-                        <span className="rounded-lg border border-sky-500/20 bg-sky-500/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.12em] text-sky-700 dark:text-sky-300">
-                          {item.start_time.slice(0, 5)}–{item.end_time.slice(0, 5)}
-                        </span>
-                        {editingSlotId !== item.id && (
-                          <>
-                            <Button
-                              type="button"
-                              size="icon"
-                              variant="ghost"
-                              className="h-7 w-7 rounded-lg text-sky-600 hover:bg-sky-500/10 hover:text-sky-700 dark:text-sky-400"
-                              onClick={() => startEditingAvailability(item)}
-                              aria-label="Edit slot"
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              type="button"
-                              size="icon"
-                              variant="ghost"
-                              className="h-7 w-7 rounded-lg text-rose-600 hover:bg-rose-500/10 hover:text-rose-700 dark:text-rose-400"
-                              onClick={() => setSlotPendingDelete(item)}
-                              aria-label="Delete slot"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </>
-                        )}
-                      </div>
+                    <div className="flex items-center gap-2 pl-2">
+                      <p className="min-w-0 flex-1 truncate font-bold text-sm text-foreground">
+                        {slotDisplayLabel(item)}
+                      </p>
+                      <span className="shrink-0 rounded-lg border border-sky-500/25 bg-sky-500/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-sky-700 dark:text-sky-300">
+                        {item.start_time.slice(0, 5)}–{item.end_time.slice(0, 5)}
+                      </span>
+                      {editingSlotId !== item.id && (
+                        <div className="flex shrink-0 items-center gap-1">
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8 rounded-lg text-sky-700 hover:bg-sky-500/15 hover:text-sky-800 dark:text-sky-300"
+                            onClick={() => startEditingAvailability(item)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8 rounded-lg text-destructive hover:bg-destructive/15"
+                            onClick={() => setSlotPendingDelete(item)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
                     </div>
-                    <p className="mt-1.5 pl-2 text-[10px] leading-tight text-muted-foreground font-medium">
-                      {buildUpcomingDatesShort(item).slice(0, 2).join(" • ") || "None scheduled"}
-                    </p>
-                    {editingSlotId === item.id && (
+                    {editingSlotId === item.id ? (
                       <div className="mt-3 space-y-2 rounded-lg border border-sky-500/15 bg-background/80 p-2.5 backdrop-blur-sm">
-                        <div className="space-y-1">
+                        <div className="space-y-2">
                           <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80">Date</label>
                           <Input
                             type="date"
-                            className="h-9 rounded-lg border border-sky-500/20 bg-background px-2.5 text-xs outline-none focus:ring-2 focus:ring-sky-500/20"
+                            className="h-10 rounded-lg border border-sky-500/20 bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-sky-500/20"
                             value={editingSlot.date}
                             onChange={(e) => setEditingSlot((prev) => ({ ...prev, date: e.target.value }))}
                           />
                           {editingSlot.date && (
-                            <p className="text-[10px] font-medium text-muted-foreground">
-                              {new Date(editingSlot.date).toLocaleDateString([], { weekday: "long", month: "short", day: "numeric", year: "numeric" })}
+                            <p className="text-[11px] font-medium text-sky-700 dark:text-sky-300">
+                              {weekdayLabels[new Date(editingSlot.date).getDay()]}, {new Date(editingSlot.date).toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" })}
                             </p>
                           )}
                         </div>
                         <div className="grid grid-cols-2 gap-2">
                           <Input
                             type="time"
-                            className="rounded-lg h-9 border-sky-500/20 bg-background text-xs"
+                            className="rounded-lg h-9 border-sky-500/20 bg-background text-sm"
                             value={editingSlot.startTime}
                             onChange={(e) => setEditingSlot((prev) => ({ ...prev, startTime: e.target.value }))}
                           />
                           <Input
                             type="time"
-                            className="rounded-lg h-9 border-sky-500/20 bg-background text-xs"
+                            className="rounded-lg h-9 border-sky-500/20 bg-background text-sm"
                             value={editingSlot.endTime}
                             onChange={(e) => setEditingSlot((prev) => ({ ...prev, endTime: e.target.value }))}
                           />
                         </div>
                         <div className="flex gap-2">
-                          <Button type="button" size="sm" className="flex-1 h-8 rounded-lg text-[10px] font-black" onClick={() => onUpdateAvailability(item)}>
+                          <Button type="button" size="sm" className="flex-1 rounded-lg text-[11px] font-bold" onClick={() => onUpdateAvailability(item)}>
                             Save
                           </Button>
                           <Button
                             type="button"
                             size="sm"
                             variant="outline"
-                            className="flex-1 h-8 rounded-lg text-[10px] font-black"
+                            className="flex-1 rounded-lg text-[11px] font-bold"
                             onClick={() => setEditingSlotId(null)}
                           >
                             Cancel
                           </Button>
                         </div>
                       </div>
-                    )}
+                    ) : null}
                   </div>
                 ))}
             </div>
@@ -603,7 +591,7 @@ export default function ProviderSchedulePage() {
                           <div className="flex items-start justify-between gap-3 mb-3">
                             <div className="space-y-1">
                               <p className="text-sm font-black tracking-tight text-foreground/90">
-                                {new Date(appointment.start_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                                {new Date(appointment.start_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false })}
                               </p>
                               <p className="text-xs font-bold text-muted-foreground hover:text-primary transition-colors cursor-default">
                                 {appointment.patient_name ?? "Patient"}

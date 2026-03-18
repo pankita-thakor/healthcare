@@ -70,6 +70,7 @@ export interface ProviderPatientProfile {
   }>;
   documents: Array<{ id: string; title: string; uploaded_at: string; file_path: string }>;
   consultations: Array<{ id: string; start_time: string; status: string; reason: string | null }>;
+  soapNotes: SoapNoteRecord[];
 }
 
 export interface ProviderAppointment {
@@ -418,7 +419,8 @@ function buildDemoPatientProfile(patientId: string): ProviderPatientProfile {
     medicalHistory: fallback.medicalHistory,
     vitals: fallback.vitals,
     documents: fallback.documents,
-    consultations: appointments
+    consultations: appointments,
+    soapNotes: readDemoSoapNotes().filter(n => n.patient_id === patientId).sort((a, b) => b.updated_at.localeCompare(a.updated_at))
   };
 }
 
@@ -1081,7 +1083,7 @@ export async function fetchProviderPatientProfile(patientId: string): Promise<Pr
     return buildDemoPatientProfile(patientId);
   }
 
-  const [{ data: user }, { data: patient }, { data: vitals }, { data: docs }, { data: visits }] = await Promise.all([
+  const [{ data: user }, { data: patient }, { data: vitals }, { data: docs }, { data: visits }, soapNotes] = await Promise.all([
     supabase.from("users").select("id, full_name").eq("id", patientId).single(),
     supabase
       .from("patients")
@@ -1104,7 +1106,8 @@ export async function fetchProviderPatientProfile(patientId: string): Promise<Pr
       .select("id, start_time, status, reason")
       .eq("patient_id", patientId)
       .order("start_time", { ascending: false })
-      .limit(20)
+      .limit(20),
+    fetchPatientSoapNotes(patientId)
   ]);
 
   const age = patient?.date_of_birth
@@ -1136,7 +1139,8 @@ export async function fetchProviderPatientProfile(patientId: string): Promise<Pr
     medicalHistory: patient?.medical_history ?? "Mild palpitations, vitamin D deficiency, family history of hypertension.",
     vitals: finalVitals,
     documents: finalDocs,
-    consultations: (visits ?? []) as ProviderPatientProfile["consultations"]
+    consultations: (visits ?? []) as ProviderPatientProfile["consultations"],
+    soapNotes
   };
 }
 
@@ -1550,6 +1554,35 @@ export async function fetchSoapNotes(appointmentId: string) {
     if (isTransientBackendError(error)) {
       return readDemoSoapNotes()
         .filter((note) => note.appointment_id === appointmentId)
+        .sort((a, b) => b.updated_at.localeCompare(a.updated_at));
+    }
+
+    throw error;
+  }
+}
+
+export async function fetchPatientSoapNotes(patientId: string) {
+  const providerId = await getCurrentUserId();
+
+  if (patientId.startsWith("demo-") || isDemoUserId(providerId)) {
+    return readDemoSoapNotes()
+      .filter((note) => note.patient_id === patientId)
+      .sort((a, b) => b.updated_at.localeCompare(a.updated_at));
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("clinical_notes")
+      .select("id, appointment_id, patient_id, provider_id, subjective, objective, assessment, plan, created_at, updated_at")
+      .eq("patient_id", patientId)
+      .order("updated_at", { ascending: false });
+
+    if (error) throw error;
+    return (data ?? []) as SoapNoteRecord[];
+  } catch (error) {
+    if (isTransientBackendError(error)) {
+      return readDemoSoapNotes()
+        .filter((note) => note.patient_id === patientId)
         .sort((a, b) => b.updated_at.localeCompare(a.updated_at));
     }
 

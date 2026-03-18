@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { FileText, Clock } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { VitalsChart } from "@/components/provider/vitals-chart";
@@ -125,6 +126,66 @@ export default function ProviderPatientProfilePage() {
       </div>
 
       <div className="pt-4">
+        <div className="mb-6 flex items-center gap-3">
+           <div className="h-px flex-1 bg-border/60"></div>
+           <h2 className="text-xs font-black uppercase tracking-[0.3em] text-muted-foreground/60">SOAP Note History</h2>
+           <div className="h-px flex-1 bg-border/60"></div>
+        </div>
+        
+        {profile.soapNotes.length === 0 ? (
+          <div className="rounded-[2rem] border border-dashed border-border/60 p-12 text-center bg-muted/5">
+            <div className="mx-auto w-12 h-12 rounded-2xl bg-muted flex items-center justify-center mb-4">
+              <FileText className="h-6 w-6 text-muted-foreground/40" />
+            </div>
+            <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest">No clinical notes recorded yet</p>
+          </div>
+        ) : (
+          <div className="grid gap-6 md:grid-cols-2">
+            {profile.soapNotes.map((note) => (
+              <Card key={note.id} className="rounded-[2rem] border-border/40 bg-card/50 backdrop-blur-sm shadow-sm overflow-hidden group hover:shadow-md transition-all">
+                <CardHeader className="p-6 pb-2 border-b border-border/30 bg-muted/20">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <FileText className="h-4 w-4 text-primary" />
+                      </div>
+                      <p className="text-xs font-black uppercase tracking-wider text-foreground/80">
+                        Consultation Record
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-tighter">
+                      <Clock className="h-3 w-3" />
+                      {new Date(note.updated_at).toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" })}
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <p className="text-[9px] font-black uppercase tracking-[0.2em] text-primary/60">Subjective</p>
+                      <p className="text-xs font-medium leading-relaxed line-clamp-3 text-foreground/90">{note.subjective}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-[9px] font-black uppercase tracking-[0.2em] text-primary/60">Objective</p>
+                      <p className="text-xs font-medium leading-relaxed line-clamp-3 text-foreground/90">{note.objective}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-[9px] font-black uppercase tracking-[0.2em] text-primary/60">Assessment</p>
+                      <p className="text-xs font-medium leading-relaxed line-clamp-3 text-foreground/90">{note.assessment}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-[9px] font-black uppercase tracking-[0.2em] text-primary/60">Plan</p>
+                      <p className="text-xs font-medium leading-relaxed line-clamp-3 text-foreground/90">{note.plan}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="pt-8">
         <div className="mb-4 flex items-center gap-3">
            <div className="h-px flex-1 bg-border/60"></div>
            <h2 className="text-xs font-black uppercase tracking-[0.3em] text-muted-foreground/60">Secure Communication</h2>

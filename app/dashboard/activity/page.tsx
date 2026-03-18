@@ -68,7 +68,7 @@ export default function ActivityPage() {
                           {new Date(activity.timestamp).toLocaleDateString([], { month: "short", day: "numeric" })}
                         </p>
                         <p className="text-[10px] font-bold text-muted-foreground/60">
-                          {new Date(activity.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                          {new Date(activity.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false })}
                         </p>
                       </div>
                     </div>

@@ -7,6 +7,7 @@ import {
   deleteSoapNote,
   ensureConsultationRoom,
   fetchSoapNotes,
+  fetchPatientSoapNotes,
   getAppointmentById,
   getOrCreateConversation,
   saveSoapNote,
@@ -32,28 +33,10 @@ const PREVIEW_MESSAGES = [
     sender_id: "patient-preview",
     recipient_id: "doctor-preview",
     content: "Sure doctor, I have uploaded it and also added the symptoms I noticed this week.",
-    timeLabel: "Today, 10:19 AM"
+    timeLabel: "Today, 10:19"
   }
 ] as const;
 
-const PREVIEW_SOAP_NOTES = [
-  {
-    id: "sample-note-1",
-    updatedLabel: "Updated today at 10:24 AM",
-    subjective: "Patient reports mild chest heaviness after climbing stairs and intermittent fatigue over the last 5 days.",
-    objective: "Home blood pressure log shows elevated evening readings. No visible distress during video review. ECG uploaded for comparison.",
-    assessment: "Possible worsening exertional symptoms with need to rule out progression of underlying cardiac strain.",
-    plan: "Review ECG, continue monitoring blood pressure twice daily, reduce exertion, and schedule follow-up review within 24 hours."
-  },
-  {
-    id: "sample-note-2",
-    updatedLabel: "Updated yesterday at 04:40 PM",
-    subjective: "Patient states sleep improved after medication adjustment but still experiences occasional dizziness in the morning.",
-    objective: "Medication adherence confirmed. Reported fasting glucose within target range this week.",
-    assessment: "Clinical response improving overall, though morning dizziness still needs observation for dose tolerance.",
-    plan: "Maintain current medication, increase hydration, monitor dizziness episodes for 3 days, and reassess if symptoms persist."
-  }
-] as const;
 
 export default function ConsultationPage() {
   const params = useParams<{ appointmentId: string }>();
@@ -66,6 +49,7 @@ export default function ConsultationPage() {
   const [chatValue, setChatValue] = useState("");
   const [soap, setSoap] = useState({ subjective: "", objective: "", assessment: "", plan: "" });
   const [savedNotes, setSavedNotes] = useState<SoapNoteRecord[]>([]);
+  const [soapHistory, setSoapHistory] = useState<SoapNoteRecord[]>([]);
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [pendingDeleteNote, setPendingDeleteNote] = useState<SoapNoteRecord | null>(null);
   const [isSoapDeleteModalVisible, setIsSoapDeleteModalVisible] = useState(false);
@@ -82,10 +66,11 @@ export default function ConsultationPage() {
         const appointment = await getAppointmentById(appointmentId);
         setPatientId(appointment.patient_id);
 
-        const [roomResult, convoId, notes] = await Promise.allSettled([
+        const [roomResult, convoId, notes, history] = await Promise.allSettled([
           ensureConsultationRoom(appointmentId),
           getOrCreateConversation(appointment.patient_id, appointmentId),
-          fetchSoapNotes(appointmentId)
+          fetchSoapNotes(appointmentId),
+          fetchPatientSoapNotes(appointment.patient_id)
         ]);
 
         if (roomResult.status === "fulfilled") {
@@ -98,6 +83,11 @@ export default function ConsultationPage() {
 
         if (notes.status === "fulfilled") {
           setSavedNotes(notes.value);
+        }
+
+        if (history.status === "fulfilled") {
+          // Filter out current appointment notes from history to avoid duplication
+          setSoapHistory(history.value.filter(n => n.appointment_id !== appointmentId));
         }
       } catch (err) {
         setError((err as Error).message);
@@ -255,7 +245,7 @@ export default function ConsultationPage() {
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur">
               <p className="text-[10px] font-black uppercase tracking-[0.22em] text-sky-300">SOAP Notes</p>
-              <p className="mt-2 text-2xl font-black text-white">{savedNotes.length || PREVIEW_SOAP_NOTES.length}</p>
+              <p className="mt-2 text-2xl font-black text-white">{savedNotes.length}</p>
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur">
               <p className="text-[10px] font-black uppercase tracking-[0.22em] text-sky-300">Status</p>
@@ -346,7 +336,7 @@ export default function ConsultationPage() {
                 {previewMessages.map((message) => {
                   const isPatient = message.sender_id === patientId || message.sender_id === "patient-preview";
                   const timeLabel =
-                    "timeLabel" in message ? message.timeLabel : new Date(message.created_at).toLocaleString();
+                    "timeLabel" in message ? message.timeLabel : new Date(message.created_at).toLocaleString([], { dateStyle: "short", timeStyle: "short", hour12: false });
 
                   return (
                     <div key={message.id} className={`flex ${isPatient ? "justify-start" : "justify-end"}`}>
@@ -452,7 +442,7 @@ export default function ConsultationPage() {
                       <div>
                         <p className="font-black">Saved note</p>
                         <p className="text-xs text-muted-foreground">
-                          Updated {new Date(note.updated_at).toLocaleString()}
+                          Updated {new Date(note.updated_at).toLocaleString([], { dateStyle: "short", timeStyle: "short", hour12: false })}
                         </p>
                       </div>
                       <div className="flex gap-2">
@@ -501,14 +491,14 @@ export default function ConsultationPage() {
             onClick={() => setIsHistoryOpen((prev) => !prev)}
           >
             <div>
-              <CardTitle className="text-xl font-black tracking-tight">Reference SOAP History</CardTitle>
+              <CardTitle className="text-xl font-black tracking-tight uppercase">Patient Clinical History</CardTitle>
               <p className="mt-1 text-xs font-medium text-muted-foreground">
-                Preview examples stay available for reference, without mixing into live or saved SOAP notes.
+                Review historical clinical notes for this patient from previous consultations.
               </p>
             </div>
             <div className="flex items-center gap-3">
               <Badge variant="outline" className="rounded-xl border-sky-500/20 px-3 text-[10px] font-black text-sky-600 dark:text-sky-300">
-                {PREVIEW_SOAP_NOTES.length} preview
+                {soapHistory.length} records
               </Badge>
               <ChevronDown
                 className={`h-5 w-5 text-sky-600 transition-transform duration-200 dark:text-sky-300 ${
@@ -520,45 +510,47 @@ export default function ConsultationPage() {
         </CardHeader>
         {isHistoryOpen && (
           <CardContent className="space-y-4 p-6 pt-0">
-            <div className="rounded-2xl border border-sky-500/15 bg-sky-500/5 p-4 text-sm text-muted-foreground">
-              These preview notes are only examples of consultation history and remain visible even after real SOAP notes are saved.
-            </div>
-            <div className="grid gap-4 xl:grid-cols-2">
-              {PREVIEW_SOAP_NOTES.map((note) => (
-                <div key={note.id} className="rounded-[1.5rem] border border-sky-500/20 bg-gradient-to-br from-sky-500/[0.08] via-background to-cyan-400/[0.06] p-5">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <p className="font-black">History preview</p>
-                        <Badge variant="outline" className="rounded-xl border-sky-500/20 px-2.5 text-[10px] font-black text-sky-600 dark:text-sky-300">
-                          Preview
-                        </Badge>
+            {soapHistory.length === 0 ? (
+              <div className="rounded-2xl border border-dashed p-10 text-center text-sm text-muted-foreground">
+                No previous clinical history found for this patient.
+              </div>
+            ) : (
+              <div className="grid gap-4 xl:grid-cols-2">
+                {soapHistory.map((note) => (
+                  <div key={note.id} className="rounded-[1.5rem] border border-sky-500/20 bg-gradient-to-br from-sky-500/[0.08] via-background to-cyan-400/[0.06] p-5">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="font-black text-foreground">Previous Consultation</p>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(note.updated_at).toLocaleString([], { dateStyle: "long", timeStyle: "short" })}
+                        </p>
                       </div>
-                      <p className="text-xs text-muted-foreground">{note.updatedLabel}</p>
                     </div>
-                  </div>
 
-                  <div className="mt-4 grid gap-3 md:grid-cols-2">
-                    <div className="rounded-xl border border-sky-500/15 bg-background/90 p-3">
-                      <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Subjective</p>
-                      <p className="text-sm">{note.subjective}</p>
-                    </div>
-                    <div className="rounded-xl border border-sky-500/15 bg-background/90 p-3">
-                      <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Objective</p>
-                      <p className="text-sm">{note.objective}</p>
-                    </div>
-                    <div className="rounded-xl border border-sky-500/15 bg-background/90 p-3">
-                      <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Assessment</p>
-                      <p className="text-sm">{note.assessment}</p>
-                    </div>
-                    <div className="rounded-xl border border-sky-500/15 bg-background/90 p-3">
-                      <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Plan</p>
-                      <p className="text-sm">{note.plan}</p>
+                    <div className="mt-4 grid gap-3 md:grid-cols-2">
+                      <div className="rounded-xl border border-sky-500/15 bg-background/90 p-3">
+                        <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-primary/70">Subjective</p>
+                        <p className="text-sm">{note.subjective}</p>
+                      </div>
+                      <div className="rounded-xl border border-sky-500/15 bg-background/90 p-3">
+                        <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-primary/70">Objective</p>
+                        <p className="text-sm">{note.objective}</p>
+                      </div>
+                      <div className="rounded-xl border border-sky-500/15 bg-background/90 p-3">
+                        <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-primary/70">Assessment</p>
+                        <p className="text-sm">{note.assessment}</p>
+                      </div>
+                      <div className="rounded-xl border border-sky-500/15 bg-background/90 p-3">
+                        <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-primary/70">Plan</p>
+                        <p className="text-sm">{note.plan}</p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         )}
       </Card>

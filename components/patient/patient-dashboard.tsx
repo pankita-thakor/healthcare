@@ -94,7 +94,7 @@ export function PatientDashboard() {
               <h3 className="text-xl font-black uppercase tracking-tight mb-2">Next Visit</h3>
               <div className="text-sm font-medium text-muted-foreground leading-relaxed">
                 {data.nextAppointment
-                  ? <span className="font-bold text-foreground">{new Date(data.nextAppointment).toLocaleString()} with {data.peerProviderName ?? "your provider"}.</span>
+                  ? <span className="font-bold text-foreground">{new Date(data.nextAppointment).toLocaleString([], { dateStyle: "short", timeStyle: "short", hour12: false })} with {data.peerProviderName ?? "your provider"}.</span>
                   : "No visits scheduled currently. Use the form above to find an available slot."}
               </div>
             </Card>

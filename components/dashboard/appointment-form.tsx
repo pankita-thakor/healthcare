@@ -151,7 +151,7 @@ export function AppointmentForm({ patientId, defaultProviderId = "" }: { patient
           </option>
           {availableSlots.map((slot) => (
             <option key={`${slot.provider_id}-${slot.slot_start}`} value={slot.slot_start}>
-              {new Date(slot.slot_start).toLocaleString()} - {new Date(slot.slot_end).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+              {new Date(slot.slot_start).toLocaleString([], { dateStyle: "short", timeStyle: "short", hour12: false })} - {new Date(slot.slot_end).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false })}
             </option>
           ))}
         </select>
