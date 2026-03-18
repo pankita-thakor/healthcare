@@ -68,7 +68,13 @@ export function AuthShell({
                   <HeartPulse className="h-6 w-6" />
                 </div>
                 <div>
-                  <p className="font-display text-xs font-black uppercase tracking-[0.28em] text-primary">{eyebrow}</p>
+                  <p className="font-display text-xs font-black uppercase tracking-[0.28em]">
+                  {eyebrow === "Healthyfy" ? (
+                    <><span className="text-foreground">Healthy</span><span className="text-[#11927d]">fy</span></>
+                  ) : (
+                    <span className="text-primary">{eyebrow}</span>
+                  )}
+                </p>
                   <p className="text-sm text-muted-foreground">Connected healthcare workspace</p>
                 </div>
               </Link>

@@ -117,8 +117,8 @@ export function Header() {
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#3b82f6] to-[#11927d] text-white shadow-lg shadow-[#3b82f6]/20 group-hover:rotate-12 transition-transform duration-300">
              <HeartPulse className="h-5 w-5" />
           </div>
-          <span className="font-display text-xl font-black tracking-tighter text-foreground">
-            Healthyfy
+          <span className="font-display text-xl font-black tracking-tighter">
+            <span className="text-foreground">Healthy</span><span className="text-[#11927d]">fy</span>
           </span>
         </button>
 

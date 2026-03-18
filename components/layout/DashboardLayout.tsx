@@ -101,11 +101,6 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         <aside className="sticky top-16 hidden h-[calc(100vh-4rem)] w-80 shrink-0 overflow-y-auto border-r border-border/40 bg-muted/30 px-6 py-10 md:block">
           <div className="flex h-full flex-col justify-between">
             <div className="space-y-8">
-              <div className="px-4">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">
-                  Main Navigation
-                </p>
-              </div>
               <nav className="space-y-2">
                 {links.map((link) => {
                   const isActive = pathname === link.href;

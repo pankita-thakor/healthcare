@@ -274,8 +274,8 @@ export default function HomePage() {
             >
               <HeartPulse className="h-6 w-6" />
             </motion.div>
-            <span className="font-display text-xl font-bold tracking-tight text-foreground">
-              Healthyfy
+            <span className="font-display text-xl font-bold tracking-tight">
+              <span className="text-foreground">Healthy</span><span className="text-[#11927d]">fy</span>
             </span>
           </Link>
           <nav className="hidden items-center gap-1 text-sm font-medium lg:flex">
@@ -719,7 +719,7 @@ export default function HomePage() {
                  <div className="space-y-12">
                     <div className="space-y-6">
                        <Badge variant="outline" className="rounded-full px-4 py-1 border-primary/20 text-primary bg-primary/5 font-black uppercase tracking-widest">Process</Badge>
-                       <h2 className="text-5xl lg:text-7xl font-black tracking-tighter leading-[0.9]">How <br /><span className="text-primary italic font-serif">Healthyfy</span> works.</h2>
+                       <h2 className="text-5xl lg:text-7xl font-black tracking-tighter leading-[0.9]">How <br /><span className="italic font-serif"><span className="text-foreground">Healthy</span><span className="text-[#11927d]">fy</span></span> works.</h2>
                     </div>
 
                     <div className="space-y-2">
@@ -845,7 +845,9 @@ export default function HomePage() {
                 <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-[#3b82f6] to-[#11927d] text-white flex items-center justify-center shadow-lg shadow-[#3b82f6]/20">
                   <HeartPulse className="h-7 w-7" />
                 </div>
-                <span className="font-display text-2xl font-black tracking-tight text-foreground">Healthyfy</span>
+                <span className="font-display text-2xl font-black tracking-tight">
+                <span className="text-foreground">Healthy</span><span className="text-[#11927d]">fy</span>
+              </span>
               </Link>
               <p className="max-w-md text-xl text-muted-foreground font-medium leading-relaxed">
                 We&apos;re building the infrastructure for a healthier world. One consultation, one AI insight, and one family at a time.
