@@ -1,7 +1,7 @@
 import { createBrowserClient } from "@/lib/supabase";
 import { getClientUserId } from "@/lib/client-auth";
 import { getDemoSessionByUserId, isDemoUserId, readDemoSession, writeDemoSession } from "@/lib/demo-session";
-import { readSyncedProviderSlots, upsertSyncedProviderSlot } from "@/lib/slot-sync";
+import { readSyncedProviderSlots, removeSyncedProviderSlot, upsertSyncedProviderSlot } from "@/lib/slot-sync";
 import { logActivity } from "@/services/activity/service";
 
 const supabase = createBrowserClient();
@@ -1229,6 +1229,109 @@ export async function saveAvailability(input: { dayOfWeek: number; startTime: st
   });
 
   logActivity("Updated Availability", `Saved new slot for ${WEEKDAY_LABELS[input.dayOfWeek] ?? "selected day"} at ${input.startTime}`, "availability");
+}
+
+export async function updateAvailability(input: {
+  originalDayOfWeek: number;
+  originalStartTime: string;
+  originalEndTime: string;
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+}) {
+  const providerId = await getCurrentUserId();
+
+  try {
+    await saveProviderAvailabilityPayload(providerId, (current) => {
+      const nextSlots = normalizeAvailabilitySlots(current)
+        .filter((slot) => {
+          return !(
+            slot.day_of_week === input.originalDayOfWeek &&
+            slot.start_time === input.originalStartTime &&
+            slot.end_time === input.originalEndTime
+          );
+        });
+
+      nextSlots.push({
+        id: `${input.dayOfWeek}-${input.startTime}-${input.endTime}`,
+        day_of_week: input.dayOfWeek,
+        start_time: input.startTime,
+        end_time: input.endTime,
+        is_active: true
+      });
+
+      nextSlots.sort((a, b) => {
+        if (a.day_of_week !== b.day_of_week) return a.day_of_week - b.day_of_week;
+        return a.start_time.localeCompare(b.start_time);
+      });
+
+      return {
+        notes: current?.notes ?? "",
+        slots: nextSlots
+      };
+    });
+  } catch (error) {
+    if (!isTransientBackendError(error)) throw error;
+  }
+
+  removeSyncedProviderSlot({
+    provider_id: providerId,
+    day_of_week: input.originalDayOfWeek,
+    start_time: input.originalStartTime,
+    end_time: input.originalEndTime
+  });
+
+  upsertSyncedProviderSlot({
+    provider_id: providerId,
+    provider_name: null,
+    category_name: null,
+    day_of_week: input.dayOfWeek,
+    start_time: input.startTime,
+    end_time: input.endTime,
+    is_active: true
+  });
+
+  logActivity(
+    "Updated Availability",
+    `Adjusted slot to ${WEEKDAY_LABELS[input.dayOfWeek] ?? "selected day"} at ${input.startTime}`,
+    "availability"
+  );
+}
+
+export async function deleteAvailability(input: { dayOfWeek: number; startTime: string; endTime: string }) {
+  const providerId = await getCurrentUserId();
+
+  try {
+    await saveProviderAvailabilityPayload(providerId, (current) => {
+      const nextSlots = normalizeAvailabilitySlots(current).filter((slot) => {
+        return !(
+          slot.day_of_week === input.dayOfWeek &&
+          slot.start_time === input.startTime &&
+          slot.end_time === input.endTime
+        );
+      });
+
+      return {
+        notes: current?.notes ?? "",
+        slots: nextSlots
+      };
+    });
+  } catch (error) {
+    if (!isTransientBackendError(error)) throw error;
+  }
+
+  removeSyncedProviderSlot({
+    provider_id: providerId,
+    day_of_week: input.dayOfWeek,
+    start_time: input.startTime,
+    end_time: input.endTime
+  });
+
+  logActivity(
+    "Updated Availability",
+    `Removed slot for ${WEEKDAY_LABELS[input.dayOfWeek] ?? "selected day"} at ${input.startTime}`,
+    "availability"
+  );
 }
 
 export async function fetchAvailability() {

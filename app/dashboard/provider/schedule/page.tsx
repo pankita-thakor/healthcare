@@ -3,10 +3,12 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
+  deleteAvailability,
   fetchAvailability,
   fetchProviderAppointments,
   rescheduleAppointment,
   saveAvailability,
+  updateAvailability,
   type ProviderAppointment,
   type ProviderAvailabilitySlot
 } from "@/services/provider/dashboard";
@@ -34,6 +36,16 @@ function mergeAvailabilitySlots(
   return deduped.sort((a, b) => {
     if (a.day_of_week !== b.day_of_week) return a.day_of_week - b.day_of_week;
     return a.start_time.localeCompare(b.start_time);
+  });
+}
+
+function removeAvailabilitySlot(current: ProviderAvailabilitySlot[], target: ProviderAvailabilitySlot) {
+  return current.filter((slot) => {
+    return !(
+      slot.day_of_week === target.day_of_week &&
+      slot.start_time === target.start_time &&
+      slot.end_time === target.end_time
+    );
   });
 }
 
@@ -122,6 +134,10 @@ export default function ProviderSchedulePage() {
   const [availability, setAvailability] = useState<ProviderAvailabilitySlot[]>([]);
   const [slot, setSlot] = useState({ dayOfWeek: "1", startTime: "09:00", endTime: "17:00" });
   const [rescheduleMap, setRescheduleMap] = useState<Record<string, string>>({});
+  const [editingSlotId, setEditingSlotId] = useState<string | null>(null);
+  const [editingSlot, setEditingSlot] = useState({ dayOfWeek: "1", startTime: "09:00", endTime: "17:00" });
+  const [slotPendingDelete, setSlotPendingDelete] = useState<ProviderAvailabilitySlot | null>(null);
+  const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
 
   async function load() {
     const [appointmentsResult, availabilityResult] = await Promise.allSettled([
@@ -154,6 +170,16 @@ export default function ProviderSchedulePage() {
     void load();
   }, []);
 
+  useEffect(() => {
+    if (!slotPendingDelete) return;
+
+    const timer = window.setTimeout(() => {
+      setIsDeleteModalVisible(true);
+    }, 10);
+
+    return () => window.clearTimeout(timer);
+  }, [slotPendingDelete]);
+
   async function onSaveAvailability(e: React.FormEvent) {
     e.preventDefault();
     try {
@@ -171,7 +197,6 @@ export default function ProviderSchedulePage() {
         endTime: slot.endTime
       });
       setAvailability((prev) => mergeAvailabilitySlots(prev, nextSlot));
-      await load();
       showNotification("Availability slot saved and synced successfully.");
     } catch (err) {
       showNotification((err as Error).message, "error");
@@ -201,6 +226,68 @@ export default function ProviderSchedulePage() {
     }
   }
 
+  function startEditingAvailability(item: ProviderAvailabilitySlot) {
+    setEditingSlotId(item.id);
+    setEditingSlot({
+      dayOfWeek: String(item.day_of_week),
+      startTime: item.start_time.slice(0, 5),
+      endTime: item.end_time.slice(0, 5)
+    });
+  }
+
+  async function onUpdateAvailability(item: ProviderAvailabilitySlot) {
+    const nextSlot: ProviderAvailabilitySlot = {
+      id: `${editingSlot.dayOfWeek}-${editingSlot.startTime}-${editingSlot.endTime}`,
+      day_of_week: Number(editingSlot.dayOfWeek),
+      start_time: editingSlot.startTime,
+      end_time: editingSlot.endTime,
+      is_active: true
+    };
+
+    try {
+      await updateAvailability({
+        originalDayOfWeek: item.day_of_week,
+        originalStartTime: item.start_time,
+        originalEndTime: item.end_time,
+        dayOfWeek: nextSlot.day_of_week,
+        startTime: nextSlot.start_time,
+        endTime: nextSlot.end_time
+      });
+
+      setAvailability((prev) => mergeAvailabilitySlots(removeAvailabilitySlot(prev, item), nextSlot));
+      setEditingSlotId(null);
+      showNotification("Availability slot updated successfully.");
+    } catch (err) {
+      showNotification((err as Error).message, "error");
+    }
+  }
+
+  async function onDeleteAvailability(item: ProviderAvailabilitySlot) {
+    try {
+      await deleteAvailability({
+        dayOfWeek: item.day_of_week,
+        startTime: item.start_time,
+        endTime: item.end_time
+      });
+
+      setAvailability((prev) => removeAvailabilitySlot(prev, item));
+      if (editingSlotId === item.id) {
+        setEditingSlotId(null);
+      }
+      closeDeleteModal();
+      showNotification("Availability slot deleted.");
+    } catch (err) {
+      showNotification((err as Error).message, "error");
+    }
+  }
+
+  function closeDeleteModal() {
+    setIsDeleteModalVisible(false);
+    window.setTimeout(() => {
+      setSlotPendingDelete(null);
+    }, 220);
+  }
+
   const calendarDays = buildCalendarDays(appointments, availability);
 
   return (
@@ -210,17 +297,17 @@ export default function ProviderSchedulePage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-12">
-        <Card className="lg:col-span-4 h-fit">
+        <Card className="lg:col-span-4 h-fit shadow-sm">
           <CardHeader>
-            <CardTitle className="text-lg">Weekly Availability</CardTitle>
+            <CardTitle className="text-lg font-black uppercase tracking-tight">Weekly Availability</CardTitle>
             <p className="text-xs text-muted-foreground font-normal">Define your recurring consultation hours</p>
           </CardHeader>
           <CardContent className="space-y-4">
             <form onSubmit={onSaveAvailability} className="space-y-3">
               <div className="space-y-2">
-                <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/80">Day of week</label>
+                <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/80 ml-1">Day of week</label>
                 <select
-                  className="w-full h-10 rounded-xl border border-input bg-background/50 px-3 text-sm focus:ring-2 focus:ring-primary/20 transition-all outline-none"
+                  className="w-full h-12 rounded-xl border border-input bg-background/50 px-3 text-sm focus:ring-2 focus:ring-primary/20 transition-all outline-none"
                   value={slot.dayOfWeek}
                   onChange={(e) => setSlot((prev) => ({ ...prev, dayOfWeek: e.target.value }))}
                 >
@@ -236,35 +323,110 @@ export default function ProviderSchedulePage() {
               
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
-                  <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/80">Start time</label>
-                  <Input type="time" className="rounded-xl bg-background/50 h-10" value={slot.startTime} onChange={(e) => setSlot((prev) => ({ ...prev, startTime: e.target.value }))} />
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/80 ml-1">Start time</label>
+                  <Input type="time" className="rounded-xl bg-background/50 h-12" value={slot.startTime} onChange={(e) => setSlot((prev) => ({ ...prev, startTime: e.target.value }))} />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/80">End time</label>
-                  <Input type="time" className="rounded-xl bg-background/50 h-10" value={slot.endTime} onChange={(e) => setSlot((prev) => ({ ...prev, endTime: e.target.value }))} />
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/80 ml-1">End time</label>
+                  <Input type="time" className="rounded-xl bg-background/50 h-12" value={slot.endTime} onChange={(e) => setSlot((prev) => ({ ...prev, endTime: e.target.value }))} />
                 </div>
               </div>
               
-              <Button type="submit" className="w-full rounded-xl shadow-lg shadow-primary/20 h-11 font-bold">Save Availability Slot</Button>
+              <Button type="submit" className="w-full rounded-xl shadow-lg shadow-primary/20 h-12 font-black text-xs uppercase tracking-widest">Save Availability Slot</Button>
             </form>
 
             <div className="pt-4 space-y-3">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground/80">Active Recurring Slots</h3>
-              {!availability.length && <p className="text-sm text-muted-foreground italic">No recurring slots saved yet.</p>}
+              <h3 className="text-xs font-black uppercase tracking-widest text-muted-foreground/80 ml-1">Active Recurring Slots</h3>
+              {!availability.length && <p className="text-sm text-muted-foreground italic px-1">No recurring slots saved yet.</p>}
               <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 scrollbar-hide">
                 {availability.map((item) => (
-                  <div key={item.id} className="rounded-xl border bg-muted/30 p-3 hover:bg-muted/50 transition-colors">
-                    <div className="flex items-center justify-between">
-                      <p className="font-bold text-sm text-foreground">
-                        {weekdayLabels[item.day_of_week]}
-                      </p>
-                      <span className="text-[11px] font-bold text-primary bg-primary/5 px-2 py-0.5 rounded-full uppercase tracking-tighter">
+                  <div
+                    key={item.id}
+                    className="relative overflow-hidden rounded-2xl border border-sky-500/20 bg-gradient-to-br from-sky-500/[0.10] via-background to-cyan-400/[0.08] p-4 shadow-sm transition-all hover:border-sky-500/35 hover:shadow-md"
+                  >
+                    <div className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-sky-500 to-cyan-400" />
+                    <div className="flex items-center justify-between gap-3 pl-2">
+                      <div>
+                        <p className="font-black text-sm text-foreground">
+                          {weekdayLabels[item.day_of_week]}
+                        </p>
+                        <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.22em] text-sky-700 dark:text-sky-300">
+                          Recurring availability
+                        </p>
+                      </div>
+                      <span className="rounded-xl border border-sky-500/20 bg-sky-500/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-sky-700 dark:text-sky-300">
                          {item.start_time.slice(0, 5)} - {item.end_time.slice(0, 5)}
                       </span>
                     </div>
-                    <p className="mt-2 text-[10px] leading-relaxed text-muted-foreground font-medium">
+                    <p className="mt-3 pl-2 text-[10px] leading-relaxed text-muted-foreground font-medium">
                       Next: {buildUpcomingDates(item).slice(0, 2).join(" • ") || "None scheduled"}
                     </p>
+                    {editingSlotId === item.id ? (
+                      <div className="mt-4 space-y-3 rounded-xl border border-sky-500/15 bg-background/80 p-3 backdrop-blur-sm">
+                        <select
+                          className="w-full h-10 rounded-xl border border-sky-500/20 bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-sky-500/20"
+                          value={editingSlot.dayOfWeek}
+                          onChange={(e) => setEditingSlot((prev) => ({ ...prev, dayOfWeek: e.target.value }))}
+                        >
+                          <option value="0">Sunday</option>
+                          <option value="1">Monday</option>
+                          <option value="2">Tuesday</option>
+                          <option value="3">Wednesday</option>
+                          <option value="4">Thursday</option>
+                          <option value="5">Friday</option>
+                          <option value="6">Saturday</option>
+                        </select>
+                        <div className="grid grid-cols-2 gap-2">
+                          <Input
+                            type="time"
+                            className="rounded-xl h-10 border-sky-500/20 bg-background"
+                            value={editingSlot.startTime}
+                            onChange={(e) => setEditingSlot((prev) => ({ ...prev, startTime: e.target.value }))}
+                          />
+                          <Input
+                            type="time"
+                            className="rounded-xl h-10 border-sky-500/20 bg-background"
+                            value={editingSlot.endTime}
+                            onChange={(e) => setEditingSlot((prev) => ({ ...prev, endTime: e.target.value }))}
+                          />
+                        </div>
+                        <div className="flex gap-2 pl-2">
+                          <Button type="button" size="sm" className="flex-1 rounded-xl text-[11px] font-black uppercase tracking-wider" onClick={() => onUpdateAvailability(item)}>
+                            Save
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="flex-1 rounded-xl text-[11px] font-black uppercase tracking-wider"
+                            onClick={() => setEditingSlotId(null)}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="mt-4 flex gap-2 pl-2">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          className="flex-1 rounded-xl border-sky-500/20 bg-background/70 text-[11px] font-black uppercase tracking-wider text-sky-700 hover:bg-sky-500/10 hover:text-sky-800 dark:text-sky-300"
+                          onClick={() => startEditingAvailability(item)}
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="destructive"
+                          className="flex-1 rounded-xl text-[11px] font-black uppercase tracking-wider"
+                          onClick={() => setSlotPendingDelete(item)}
+                        >
+                          Delete
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -272,14 +434,14 @@ export default function ProviderSchedulePage() {
           </CardContent>
         </Card>
 
-        <Card className="lg:col-span-8">
+        <Card className="lg:col-span-8 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
             <div>
-              <CardTitle className="text-lg">Appointments Calendar</CardTitle>
+              <CardTitle className="text-lg font-black uppercase tracking-tight">Appointments Calendar</CardTitle>
               <p className="text-xs text-muted-foreground font-normal">Manage your upcoming consultations for the next 7 days</p>
             </div>
             <div className="flex gap-1.5">
-              <div className="h-2 w-2 rounded-full bg-emerald-500"></div>
+              <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></div>
               <div className="h-2 w-2 rounded-full bg-primary/40"></div>
               <div className="h-2 w-2 rounded-full bg-muted"></div>
             </div>
@@ -317,15 +479,20 @@ export default function ProviderSchedulePage() {
                       )}
 
                       {day.availabilitySlots.map((slotItem) => (
-                        <div key={slotItem.id} className="relative group/slot overflow-hidden rounded-xl border border-primary/10 bg-primary/[0.03] p-4 transition-all hover:bg-primary/[0.05] hover:border-primary/20">
-                          <div className="absolute top-0 right-0 p-1.5">
-                             <div className="h-1.5 w-1.5 rounded-full bg-primary/40 animate-pulse"></div>
+                        <div
+                          key={slotItem.id}
+                          className="relative group/slot overflow-hidden rounded-xl border border-sky-500/20 bg-gradient-to-br from-sky-500/[0.12] via-background to-cyan-400/[0.08] p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-sky-500/35 hover:shadow-md"
+                        >
+                          <div className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-sky-500 to-cyan-400" />
+                          <div className="absolute top-3 right-3 flex items-center gap-1 rounded-full border border-sky-500/20 bg-background/80 px-2 py-1 backdrop-blur">
+                             <div className="h-1.5 w-1.5 rounded-full bg-sky-500 animate-pulse"></div>
+                             <span className="text-[9px] font-black uppercase tracking-[0.18em] text-sky-700 dark:text-sky-300">Open</span>
                           </div>
-                          <div className="flex flex-col gap-1">
-                            <p className="text-sm font-black text-primary/80 tracking-tight">
+                          <div className="flex flex-col gap-1 pl-2">
+                            <p className="text-sm font-black text-sky-700 dark:text-sky-300 tracking-tight">
                               {slotItem.startLabel} - {slotItem.endLabel}
                             </p>
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-primary/40">Available Slot</p>
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-sky-700/70 dark:text-sky-300/70">Available Slot</p>
                           </div>
                         </div>
                       ))}
@@ -386,6 +553,46 @@ export default function ProviderSchedulePage() {
           </CardContent>
         </Card>
       </div>
+
+      {slotPendingDelete && (
+        <div
+          className={`fixed inset-0 z-50 flex items-center justify-center bg-background/60 p-4 backdrop-blur-sm transition-all duration-200 ${
+            isDeleteModalVisible ? "opacity-100" : "opacity-0"
+          }`}
+        >
+          <div
+            className={`w-full max-w-md rounded-[1.75rem] border border-border/60 bg-background p-6 shadow-2xl transition-all duration-200 ${
+              isDeleteModalVisible ? "translate-y-0 scale-100 opacity-100" : "translate-y-4 scale-95 opacity-0"
+            }`}
+          >
+            <div className="space-y-3">
+              <p className="text-[11px] font-black uppercase tracking-[0.24em] text-destructive">Confirm Delete</p>
+              <h2 className="text-xl font-black tracking-tight text-foreground">Delete recurring availability slot?</h2>
+              <p className="text-sm leading-6 text-muted-foreground">
+                This will remove the slot for `{weekdayLabels[slotPendingDelete.day_of_week]}` from `{slotPendingDelete.start_time.slice(0, 5)}` to `{slotPendingDelete.end_time.slice(0, 5)}`.
+              </p>
+            </div>
+            <div className="mt-6 flex gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                className="flex-1 rounded-xl"
+                onClick={closeDeleteModal}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                className="flex-1 rounded-xl"
+                onClick={() => void onDeleteAvailability(slotPendingDelete)}
+              >
+                Delete Slot
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

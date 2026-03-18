@@ -25,13 +25,13 @@ export default function ProviderPatientProfilePage() {
           <h1 className="text-3xl font-black tracking-tight">{profile.name}</h1>
           <p className="text-sm font-medium text-muted-foreground">Patient Profile & Clinical History</p>
         </div>
-        <Button asChild variant="outline" className="rounded-xl border-border/60 font-bold">
+        <Button asChild variant="outline" className="font-bold">
           <Link href="/dashboard/provider/patients">Back to patients</Link>
         </Button>
       </div>
 
       <div className="grid gap-6 md:grid-cols-3">
-        <Card className="md:col-span-1 rounded-2xl border-border/40 shadow-sm">
+        <Card className="md:col-span-1 border-border/40 shadow-sm">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg font-black tracking-tight uppercase text-foreground/70">Summary</CardTitle>
           </CardHeader>
@@ -47,7 +47,7 @@ export default function ProviderPatientProfilePage() {
           </CardContent>
         </Card>
 
-        <Card className="md:col-span-2 rounded-2xl border-border/40 shadow-sm">
+        <Card className="md:col-span-2 border-border/40 shadow-sm">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg font-black tracking-tight uppercase text-foreground/70">Medical History</CardTitle>
           </CardHeader>
@@ -59,7 +59,7 @@ export default function ProviderPatientProfilePage() {
         </Card>
       </div>
 
-      <Card className="rounded-2xl border-border/40 shadow-sm overflow-hidden">
+      <Card className="border-border/40 shadow-sm overflow-hidden">
         <CardHeader className="border-b bg-muted/10">
           <CardTitle className="text-lg font-black tracking-tight uppercase text-foreground/70 text-center">Vital Signs Trend</CardTitle>
         </CardHeader>
@@ -69,7 +69,7 @@ export default function ProviderPatientProfilePage() {
       </Card>
 
       <div className="grid gap-6 md:grid-cols-2">
-        <Card className="rounded-2xl border-border/40 shadow-sm">
+        <Card className="border-border/40 shadow-sm">
           <CardHeader>
             <CardTitle className="text-lg font-black tracking-tight uppercase text-foreground/70">Uploaded Documents</CardTitle>
           </CardHeader>
@@ -94,7 +94,7 @@ export default function ProviderPatientProfilePage() {
           </CardContent>
         </Card>
 
-        <Card className="rounded-2xl border-border/40 shadow-sm">
+        <Card className="border-border/40 shadow-sm">
           <CardHeader>
             <CardTitle className="text-lg font-black tracking-tight uppercase text-foreground/70">Consultation History</CardTitle>
           </CardHeader>
@@ -116,7 +116,7 @@ export default function ProviderPatientProfilePage() {
                   </span>
                 </div>
                 <p className="text-xs font-medium text-muted-foreground leading-relaxed italic">
-                  &quot;{visit.reason ?? 'No clinical reason provided.'}&quot;
+                  &quot;{visit.reason ?? "No clinical reason provided."}&quot;
                 </p>
               </div>
             ))}

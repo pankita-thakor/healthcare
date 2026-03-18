@@ -53,3 +53,16 @@ export function upsertSyncedProviderSlot(slot: SyncedProviderSlot) {
 
   writeSyncedProviderSlots(existing);
 }
+
+export function removeSyncedProviderSlot(slot: Pick<SyncedProviderSlot, "provider_id" | "day_of_week" | "start_time" | "end_time">) {
+  const remaining = readSyncedProviderSlots().filter((item) => {
+    return !(
+      item.provider_id === slot.provider_id &&
+      item.day_of_week === slot.day_of_week &&
+      item.start_time === slot.start_time &&
+      item.end_time === slot.end_time
+    );
+  });
+
+  writeSyncedProviderSlots(remaining);
+}

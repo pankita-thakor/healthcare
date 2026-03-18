@@ -9,10 +9,10 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
 const fieldClassName =
-  "h-12 rounded-xl border-border/60 bg-background/80 px-4 text-sm shadow-sm transition focus-visible:ring-2 focus-visible:ring-primary/30";
+  "h-12 rounded-2xl border border-slate-200 bg-slate-50/95 px-4 text-sm text-foreground shadow-[0_8px_24px_-20px_rgba(15,23,42,0.28)] transition placeholder:text-slate-400 focus-visible:border-primary/50 focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-primary/20 dark:border-white/10 dark:bg-background/90 dark:placeholder:text-muted-foreground/70";
 
 const selectClassName =
-  "h-12 w-full rounded-xl border border-input border-border/60 bg-background/80 px-4 text-sm shadow-sm transition outline-none focus:ring-2 focus:ring-primary/30";
+  "h-12 w-full rounded-2xl border border-slate-200 bg-slate-50/95 px-4 text-sm text-foreground shadow-[0_8px_24px_-20px_rgba(15,23,42,0.28)] transition outline-none focus:border-primary/50 focus:bg-white focus:ring-2 focus:ring-primary/20 dark:border-white/10 dark:bg-background/90";
 
 export function SignupForm() {
   const router = useRouter();
@@ -120,7 +120,7 @@ export function SignupForm() {
       </div>
 
       {isProvider && (
-        <div className="space-y-5 rounded-[1.5rem] border border-border/60 bg-muted/30 p-5 sm:p-6">
+        <div className="space-y-5 rounded-[1.75rem] border border-white/60 bg-muted/20 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_18px_40px_-30px_rgba(15,23,42,0.35)] sm:p-6 dark:border-white/10">
           <div className="space-y-1">
             <h3 className="text-base font-bold text-foreground">Provider details</h3>
             <p className="text-sm text-muted-foreground">Tell us about your professional profile so we can set up your provider workspace.</p>
@@ -215,7 +215,7 @@ export function SignupForm() {
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
                 placeholder="Share your care philosophy, specialties, and patient focus."
-                className="min-h-[120px] rounded-xl border-border/60 bg-background/80 px-4 py-3 text-sm shadow-sm transition focus-visible:ring-2 focus-visible:ring-primary/30"
+                className="min-h-[120px] rounded-2xl border border-slate-200 bg-slate-50/95 px-4 py-3 text-sm text-foreground shadow-[0_8px_24px_-20px_rgba(15,23,42,0.28)] transition placeholder:text-slate-400 focus-visible:border-primary/50 focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-primary/20 dark:border-white/10 dark:bg-background/90 dark:placeholder:text-muted-foreground/70"
                 required
               />
             </div>
@@ -225,7 +225,7 @@ export function SignupForm() {
 
       {error && <p className="rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">{error}</p>}
 
-      <Button type="submit" className="h-12 w-full rounded-xl text-sm font-bold shadow-lg shadow-primary/20">
+      <Button type="submit" className="h-12 w-full rounded-2xl text-sm font-bold shadow-lg shadow-primary/20">
         Create account
       </Button>
     </form>

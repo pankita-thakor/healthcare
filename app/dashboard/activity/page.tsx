@@ -50,7 +50,7 @@ export default function ActivityPage() {
                      )}></div>
                   </div>
                   
-                  <Card className="ml-14 flex-1 rounded-2xl border-border/40 hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 overflow-hidden">
+                  <Card className="ml-14 flex-1 border-border/40 hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 overflow-hidden">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4">
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">

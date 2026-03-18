@@ -396,7 +396,7 @@ export default function HomePage() {
                      </div>
                   </div>
 
-                  <Card className="border-border/60 bg-background/80 backdrop-blur-sm rounded-2xl overflow-hidden group transition-all hover:shadow-lg">
+                  <Card className="border-border/60 bg-background/80 backdrop-blur-sm rounded-[2rem] overflow-hidden group transition-all hover:shadow-lg">
                      <CardContent className="p-4 space-y-4">
                         <div className="flex items-center justify-between">
                            <Badge variant="secondary" className="bg-blue-500/10 text-blue-500 border-none font-bold">Appointment</Badge>
@@ -459,7 +459,8 @@ export default function HomePage() {
                 transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
                 className="absolute right-0 top-1/4 z-20 hidden 2xl:block"
               >
-                <div className="animate-glass-drift p-4 rounded-2xl bg-background shadow-2xl border border-border/40 backdrop-blur-md flex items-center gap-3">
+                <div className="animate-glass-drift p-4 rounded-xl bg-background shadow-2xl border border-border/40 backdrop-blur-md flex items-center gap-3">
+
                    <div className="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center text-white">
                       <CalendarCheck2 className="h-5 w-5" />
                    </div>

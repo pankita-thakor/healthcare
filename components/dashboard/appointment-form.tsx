@@ -118,7 +118,7 @@ export function AppointmentForm({ patientId, defaultProviderId = "" }: { patient
     <div className="relative">
       <form onSubmit={onSubmit} className="grid gap-3 md:grid-cols-3">
         <select
-          className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+          className="h-12 rounded-xl border border-input bg-background px-3 text-sm"
           value={providerId}
           onChange={(e) => {
             setProviderId(e.target.value);
@@ -136,7 +136,7 @@ export function AppointmentForm({ patientId, defaultProviderId = "" }: { patient
         </select>
 
         <select
-          className="h-10 rounded-md border border-input bg-background px-3 text-sm md:col-span-2"
+          className="h-12 rounded-xl border border-input bg-background px-3 text-sm md:col-span-2"
           value={slotStart}
           onChange={(e) => setSlotStart(e.target.value)}
           disabled={loadingSlots || !providerId}
@@ -166,29 +166,29 @@ export function AppointmentForm({ patientId, defaultProviderId = "" }: { patient
         )}
 
         {selectedProvider && (
-          <div className="rounded-lg border bg-muted/20 p-4 text-sm md:col-span-3">
+          <div className="rounded-2xl border bg-muted/20 p-6 text-sm md:col-span-3">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="space-y-1">
-                <p className="text-base font-semibold">{selectedProvider.provider_name ?? "Provider"}</p>
-                <p className="text-muted-foreground">
+                <p className="text-base font-bold">{selectedProvider.provider_name ?? "Provider"}</p>
+                <p className="text-muted-foreground font-medium">
                   {selectedProvider.category_name ?? "General care"}
                   {selectedProvider.experience != null ? ` · ${selectedProvider.experience} yrs experience` : ""}
                 </p>
                 {selectedProvider.hospital && (
-                  <p className="text-muted-foreground">{selectedProvider.hospital}</p>
+                  <p className="text-muted-foreground font-medium">{selectedProvider.hospital}</p>
                 )}
               </div>
-              <div className="rounded-md border bg-background px-3 py-2 text-right">
-                <p className="font-medium">{selectedProvider.availableSlotCount} open slots</p>
-                <p className="text-xs text-muted-foreground">
+              <div className="rounded-xl border bg-background px-4 py-2 text-right shadow-sm">
+                <p className="font-black text-primary">{selectedProvider.availableSlotCount} open slots</p>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-tighter">
                   {selectedProvider.nextSlot
-                    ? `Next: ${new Date(selectedProvider.nextSlot.slot_start).toLocaleString()}`
+                    ? `Next: ${new Date(selectedProvider.nextSlot.slot_start).toLocaleDateString()}`
                     : "No future slot"}
                 </p>
               </div>
             </div>
             {selectedProvider.bio && (
-              <p className="mt-3 text-muted-foreground">{selectedProvider.bio}</p>
+              <p className="mt-4 text-muted-foreground leading-relaxed italic">{selectedProvider.bio}</p>
             )}
           </div>
         )}

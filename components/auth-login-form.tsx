@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 const fieldClassName =
-  "h-12 rounded-xl border-border/60 bg-background/80 px-4 text-sm shadow-sm transition focus-visible:ring-2 focus-visible:ring-primary/30";
+  "h-12 rounded-2xl border border-slate-200 bg-slate-50/95 px-4 text-sm text-foreground shadow-[0_8px_24px_-20px_rgba(15,23,42,0.28)] transition placeholder:text-slate-400 focus-visible:border-primary/50 focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-primary/20 dark:border-white/10 dark:bg-background/90 dark:placeholder:text-muted-foreground/70";
 
 export function LoginForm() {
   const [email, setEmail] = useState("");
@@ -70,7 +70,7 @@ export function LoginForm() {
 
       {error && <p className="rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">{error}</p>}
 
-      <Button type="submit" className="h-12 w-full rounded-xl text-sm font-bold shadow-lg shadow-primary/20">
+      <Button type="submit" className="h-12 w-full rounded-2xl text-sm font-bold shadow-lg shadow-primary/20">
         Sign in
       </Button>
     </form>

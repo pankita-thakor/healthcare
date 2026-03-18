@@ -103,7 +103,7 @@ export function ChatPanel({ userId, peerId, peerName }: { userId: string; peerId
   }
 
   return (
-    <div className="flex flex-col h-[400px] rounded-2xl border bg-background overflow-hidden shadow-sm">
+    <div className="flex flex-col h-[400px] border bg-background overflow-hidden shadow-sm rounded-2xl">
       <div className="bg-muted/30 px-4 py-3 border-b flex items-center justify-between">
          <h3 className="text-sm font-bold tracking-tight">Direct Conversation</h3>
          <div className="flex items-center gap-1.5">

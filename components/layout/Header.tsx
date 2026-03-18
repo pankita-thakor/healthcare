@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Bell } from "lucide-react";
+import { Bell, HeartPulse } from "lucide-react";
 import { createBrowserClient } from "@/lib/supabase";
 import { logout } from "@/services/auth/service";
 import { getClientRole, getClientUserId } from "@/lib/client-auth";
@@ -106,56 +106,84 @@ export function Header() {
   const settingsPath = getSettingsPath(role);
 
   return (
-    <header className="sticky top-0 z-20 border-b bg-background/95 backdrop-blur">
-      <div className="flex h-16 items-center justify-between px-4 md:px-6">
+    <header className="sticky top-0 z-40 border-b border-border/40 bg-background/80 backdrop-blur-xl transition-all">
+      <div className="mx-auto flex h-16 max-w-[100%] items-center justify-between px-4 md:px-8">
         <button
           type="button"
           onClick={() => router.push(dashboardPath)}
-          className="text-left text-lg font-semibold tracking-tight"
+          className="group flex items-center gap-2.5 transition-transform active:scale-95"
           aria-label="Go to dashboard"
         >
-          Healthyfy
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg shadow-primary/20 group-hover:rotate-12 transition-transform duration-300">
+             <HeartPulse className="h-5 w-5" />
+          </div>
+          <span className="text-xl font-black tracking-tighter text-foreground">
+            Healthy<span className="text-primary">fy</span>
+          </span>
         </button>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <button
             type="button"
-            className="relative rounded-md border p-2 hover:bg-muted"
+            className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-border/60 bg-background/50 text-muted-foreground transition-all hover:bg-muted hover:text-foreground active:scale-95"
             aria-label="Notifications"
             title="Notifications"
           >
             <Bell className="h-4 w-4" />
             {unreadCount > 0 && (
-              <span className="absolute -right-1 -top-1 rounded-full bg-destructive px-1.5 text-[10px] font-semibold text-white">
-                {unreadCount}
-              </span>
+              <span className="absolute right-2 top-2 flex h-2 w-2 rounded-full bg-destructive shadow-[0_0_0_2px_white] dark:shadow-[0_0_0_2px_black]" />
             )}
           </button>
 
+          <div className="h-6 w-px bg-border/60 mx-1 hidden sm:block" />
+
           <ThemeToggle />
 
-          <details className="relative">
-            <summary className="list-none cursor-pointer rounded-md border px-3 py-2 text-sm hover:bg-muted">
-              {fullName}
+          <details className="relative group/details">
+            <summary className="list-none cursor-pointer rounded-xl border border-border/60 bg-background/50 px-4 py-2 text-sm font-bold text-foreground transition-all hover:bg-muted active:scale-95">
+              <div className="flex items-center gap-2">
+                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary text-[10px] font-black">
+                   {fullName.slice(0, 1).toUpperCase()}
+                </div>
+                <span className="hidden sm:inline">{fullName}</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="opacity-40"><path d="m6 9 6 6 6-6"/></svg>
+              </div>
             </summary>
-            <div className="absolute right-0 mt-2 w-44 rounded-md border bg-background p-1 shadow-md">
+            <div className="absolute right-0 mt-3 w-56 origin-top-right overflow-hidden rounded-2xl border border-border/40 bg-background/95 p-1.5 shadow-2xl backdrop-blur-xl animate-in fade-in zoom-in-95 duration-200">
+              <div className="px-3 py-2.5 mb-1 border-b border-border/40">
+                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">Account</p>
+                 <p className="text-xs font-bold truncate">{fullName}</p>
+              </div>
               <button
                 type="button"
                 onClick={() => router.push(profilePath as never)}
-                className="block w-full rounded px-3 py-2 text-left text-sm hover:bg-muted"
+                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition-all hover:bg-muted active:bg-muted/80"
               >
-                Profile
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/5 text-primary">
+                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                </div>
+                Profile Settings
               </button>
               <button
                 type="button"
                 onClick={() => router.push(settingsPath as never)}
-                className="block w-full rounded px-3 py-2 text-left text-sm hover:bg-muted"
+                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition-all hover:bg-muted active:bg-muted/80"
               >
-                Settings
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-500/5 text-amber-600">
+                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                </div>
+                Security
               </button>
-              <Button variant="ghost" className="w-full justify-start" onClick={onLogout}>
-                Logout
-              </Button>
+              <div className="my-1 h-px bg-border/40" />
+              <button 
+                onClick={onLogout}
+                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm font-bold text-destructive transition-all hover:bg-destructive/5 active:bg-destructive/10"
+              >
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-destructive/5">
+                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
+                </div>
+                Sign Out
+              </button>
             </div>
           </details>
         </div>
