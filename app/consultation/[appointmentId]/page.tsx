@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowLeft, Pencil, Trash2 } from "lucide-react";
+import { ArrowLeft, ChevronDown, FileText, MessageSquareText, Pencil, Trash2, Video } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import {
   deleteSoapNote,
@@ -13,10 +13,47 @@ import {
   type SoapNoteRecord
 } from "@/services/provider/dashboard";
 import { useProviderConversation } from "@/hooks/use-provider-conversation";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+
+const PREVIEW_MESSAGES = [
+  {
+    id: "preview-doctor-1",
+    sender_id: "doctor-preview",
+    recipient_id: "patient-preview",
+    content: "Please upload your latest ECG before tomorrow's review so I can compare it with the previous result.",
+    timeLabel: "Today, 10:12 AM"
+  },
+  {
+    id: "preview-patient-1",
+    sender_id: "patient-preview",
+    recipient_id: "doctor-preview",
+    content: "Sure doctor, I have uploaded it and also added the symptoms I noticed this week.",
+    timeLabel: "Today, 10:19 AM"
+  }
+] as const;
+
+const PREVIEW_SOAP_NOTES = [
+  {
+    id: "sample-note-1",
+    updatedLabel: "Updated today at 10:24 AM",
+    subjective: "Patient reports mild chest heaviness after climbing stairs and intermittent fatigue over the last 5 days.",
+    objective: "Home blood pressure log shows elevated evening readings. No visible distress during video review. ECG uploaded for comparison.",
+    assessment: "Possible worsening exertional symptoms with need to rule out progression of underlying cardiac strain.",
+    plan: "Review ECG, continue monitoring blood pressure twice daily, reduce exertion, and schedule follow-up review within 24 hours."
+  },
+  {
+    id: "sample-note-2",
+    updatedLabel: "Updated yesterday at 04:40 PM",
+    subjective: "Patient states sleep improved after medication adjustment but still experiences occasional dizziness in the morning.",
+    objective: "Medication adherence confirmed. Reported fasting glucose within target range this week.",
+    assessment: "Clinical response improving overall, though morning dizziness still needs observation for dose tolerance.",
+    plan: "Maintain current medication, increase hydration, monitor dizziness episodes for 3 days, and reassess if symptoms persist."
+  }
+] as const;
 
 export default function ConsultationPage() {
   const params = useParams<{ appointmentId: string }>();
@@ -31,6 +68,8 @@ export default function ConsultationPage() {
   const [savedNotes, setSavedNotes] = useState<SoapNoteRecord[]>([]);
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [pendingDeleteNote, setPendingDeleteNote] = useState<SoapNoteRecord | null>(null);
+  const [isSoapDeleteModalVisible, setIsSoapDeleteModalVisible] = useState(false);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
   const [sending, setSending] = useState(false);
@@ -68,7 +107,21 @@ export default function ConsultationPage() {
     void init();
   }, [appointmentId]);
 
+  useEffect(() => {
+    if (!pendingDeleteNote) return;
+
+    const timer = window.setTimeout(() => {
+      setIsSoapDeleteModalVisible(true);
+    }, 10);
+
+    return () => window.clearTimeout(timer);
+  }, [pendingDeleteNote]);
+
   const { messages, send } = useProviderConversation(conversationId);
+  const previewMessages =
+    messages.length > 0
+      ? messages
+      : PREVIEW_MESSAGES;
 
   async function onSendMessage(e: React.FormEvent) {
     e.preventDefault();
@@ -123,6 +176,7 @@ export default function ConsultationPage() {
         setSoap({ subjective: "", objective: "", assessment: "", plan: "" });
       }
       setStatus("SOAP note deleted.");
+      closeSoapDeleteModal();
     } catch (err) {
       setError((err as Error).message);
     }
@@ -139,27 +193,40 @@ export default function ConsultationPage() {
     setStatus("Editing saved SOAP note.");
   }
 
+  function closeSoapDeleteModal() {
+    setIsSoapDeleteModalVisible(false);
+    window.setTimeout(() => {
+      setPendingDeleteNote(null);
+    }, 220);
+  }
+
   return (
-    <main className="py-2">
+    <main className="space-y-6 pb-8">
       {pendingDeleteNote && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-          <div className="w-full max-w-md rounded-2xl border bg-background p-6 shadow-2xl">
-            <h2 className="text-lg font-semibold">Delete SOAP note?</h2>
-            <p className="mt-2 text-sm text-muted-foreground">
+        <div
+          className={`fixed inset-0 z-50 flex items-center justify-center bg-background/60 px-4 backdrop-blur-sm transition-all duration-200 ${
+            isSoapDeleteModalVisible ? "opacity-100" : "opacity-0"
+          }`}
+        >
+          <div
+            className={`w-full max-w-md rounded-[1.75rem] border border-border/60 bg-background p-6 shadow-2xl transition-all duration-200 ${
+              isSoapDeleteModalVisible ? "translate-y-0 scale-100 opacity-100" : "translate-y-4 scale-95 opacity-0"
+            }`}
+          >
+            <p className="text-[11px] font-black uppercase tracking-[0.24em] text-destructive">Confirm Delete</p>
+            <h2 className="mt-3 text-xl font-black tracking-tight">Delete SOAP note?</h2>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
               This will permanently remove the saved SOAP note from this consultation.
             </p>
             <div className="mt-5 flex justify-end gap-2">
-              <Button type="button" variant="outline" onClick={() => setPendingDeleteNote(null)}>
+              <Button type="button" variant="outline" className="rounded-xl" onClick={closeSoapDeleteModal}>
                 Cancel
               </Button>
               <Button
                 type="button"
                 variant="destructive"
-                onClick={() => {
-                  const noteId = pendingDeleteNote.id;
-                  setPendingDeleteNote(null);
-                  void onDeleteSoap(noteId);
-                }}
+                className="rounded-xl"
+                onClick={() => void onDeleteSoap(pendingDeleteNote.id)}
               >
                 Yes, delete
               </Button>
@@ -168,133 +235,332 @@ export default function ConsultationPage() {
         </div>
       )}
 
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <Button type="button" variant="outline" onClick={() => router.back()}>
+      <section className="relative overflow-hidden rounded-[2rem] bg-[#0F172A] p-6 text-white shadow-2xl md:p-8">
+        <div className="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div className="space-y-4">
+            <Badge className="rounded-full border-none bg-sky-400/15 px-4 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-sky-300 hover:bg-sky-400/20">
+              Live Consultation
+            </Badge>
+            <div className="space-y-2">
+              <h1 className="text-3xl font-black tracking-tight md:text-4xl">Doctor Consultation Workspace</h1>
+              <p className="max-w-2xl text-sm leading-6 text-slate-300 md:text-base">
+                Run the video call, share chat updates, and capture SOAP notes from one focused clinical workspace.
+              </p>
+            </div>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur">
+              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-sky-300">Messages</p>
+              <p className="mt-2 text-2xl font-black text-white">{messages.length}</p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur">
+              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-sky-300">SOAP Notes</p>
+              <p className="mt-2 text-2xl font-black text-white">{savedNotes.length || PREVIEW_SOAP_NOTES.length}</p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur">
+              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-sky-300">Status</p>
+              <p className="mt-2 text-sm font-black uppercase tracking-[0.18em] text-emerald-300">
+                {meetingUrl ? "Ready" : "Loading"}
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="absolute -right-20 top-0 h-72 w-72 rounded-full bg-sky-400/12 blur-[100px]" />
+        <div className="absolute bottom-0 left-1/3 h-52 w-52 rounded-full bg-cyan-400/10 blur-[90px]" />
+      </section>
+
+      <div className="flex items-center justify-between gap-3">
+        <Button type="button" variant="outline" className="rounded-xl" onClick={() => router.back()}>
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back
         </Button>
-        <p className="text-sm text-muted-foreground">Consultation workspace</p>
+        <p className="text-sm font-medium text-muted-foreground">Consultation workspace</p>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Card>
-          <CardHeader><CardTitle>Video Consultation</CardTitle></CardHeader>
-          <CardContent>
+      {(status || error) && (
+        <div className={`rounded-2xl border px-4 py-3 text-sm ${error ? "border-destructive/20 bg-destructive/5 text-destructive" : "border-sky-500/20 bg-sky-500/5 text-sky-700 dark:text-sky-300"}`}>
+          {error || status}
+        </div>
+      )}
+
+      <div className="grid gap-6 lg:grid-cols-[1.2fr,0.8fr]">
+        <Card className="overflow-hidden rounded-[2rem] border-border/40 bg-background/70 shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between p-6 pb-3 space-y-0">
+            <div className="space-y-1">
+              <CardTitle className="flex items-center gap-2 text-xl font-black tracking-tight">
+                <Video className="h-5 w-5 text-sky-600 dark:text-sky-300" />
+                Video Consultation
+              </CardTitle>
+              <p className="text-xs font-medium text-muted-foreground">Secure call room for live provider-patient review.</p>
+            </div>
+            <Badge variant="outline" className="rounded-xl border-sky-500/20 px-3 text-[10px] font-black text-sky-600 dark:text-sky-300">
+              {meetingUrl ? "Connected" : "Preparing"}
+            </Badge>
+          </CardHeader>
+          <CardContent className="p-6 pt-2">
             {meetingUrl ? (
-              <iframe title="Daily consultation room" src={meetingUrl} className="h-[420px] w-full rounded-lg border" allow="camera; microphone; fullscreen; display-capture" />
+              <iframe
+                title="Daily consultation room"
+                src={meetingUrl}
+                className="h-[480px] w-full rounded-[1.5rem] border border-sky-500/15 bg-muted/20 shadow-sm"
+                allow="camera; microphone; fullscreen; display-capture"
+              />
             ) : (
-              <p className="text-sm text-muted-foreground">Preparing meeting room...</p>
+              <div className="flex h-[480px] items-center justify-center rounded-[1.5rem] border border-dashed border-sky-500/20 bg-sky-500/5">
+                <p className="text-sm font-medium text-muted-foreground">Preparing meeting room...</p>
+              </div>
             )}
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader><CardTitle>Doctor-Patient Chat</CardTitle></CardHeader>
-          <CardContent className="space-y-3">
-            <div className="max-h-72 space-y-2 overflow-auto rounded border p-2">
-              {messages.length === 0 && (
-                <p className="text-sm text-muted-foreground">No messages yet. Send the first update to the patient.</p>
-              )}
-              {messages.map((message) => (
-                <div key={message.id} className="rounded bg-muted p-2 text-sm">
-                  <p className="font-medium">{message.sender_id === patientId ? "Patient" : "Doctor"}</p>
-                  <p>{message.content}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">{new Date(message.created_at).toLocaleString()}</p>
+        <Card className="rounded-[2rem] border-border/40 bg-background/70 shadow-sm">
+          <CardHeader className="p-6 pb-3">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <CardTitle className="flex items-center gap-2 text-xl font-black tracking-tight">
+                  <MessageSquareText className="h-5 w-5 text-sky-600 dark:text-sky-300" />
+                  Doctor-Patient Chat
+                </CardTitle>
+                <p className="mt-1 text-xs font-medium text-muted-foreground">Share quick instructions, follow-up tasks, and care updates during the consultation.</p>
+              </div>
+              <Badge variant="outline" className="rounded-xl border-sky-500/20 px-3 text-[10px] font-black text-sky-600 dark:text-sky-300">
+                Secure Channel
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4 p-6 pt-2">
+            <div className="rounded-[1.5rem] border border-border/50 bg-gradient-to-b from-sky-500/[0.04] via-background to-background p-3">
+              <div className="mb-3 flex items-center justify-between rounded-2xl border border-sky-500/15 bg-background/80 px-4 py-2.5 backdrop-blur">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.22em] text-sky-600 dark:text-sky-300">Conversation Flow</p>
+                  <p className="text-xs text-muted-foreground">
+                    {messages.length > 0 ? "Live consultation messages" : "Sample conversation preview until messages arrive"}
+                  </p>
                 </div>
-              ))}
+                <div className="flex items-center gap-2">
+                  <div className="h-2 w-2 rounded-full bg-sky-500 animate-pulse" />
+                  <div className="h-2 w-2 rounded-full bg-cyan-400" />
+                </div>
+              </div>
+              <div className="max-h-[340px] space-y-3 overflow-auto pr-1">
+                {previewMessages.map((message) => {
+                  const isPatient = message.sender_id === patientId || message.sender_id === "patient-preview";
+                  const timeLabel =
+                    "timeLabel" in message ? message.timeLabel : new Date(message.created_at).toLocaleString();
+
+                  return (
+                    <div key={message.id} className={`flex ${isPatient ? "justify-start" : "justify-end"}`}>
+                      <div
+                        className={`max-w-[88%] rounded-[1.35rem] border px-4 py-3 text-sm shadow-sm ${
+                          isPatient
+                            ? "border-border/50 bg-background text-foreground"
+                            : "border-sky-500/20 bg-gradient-to-br from-sky-500/[0.14] to-cyan-400/[0.10] text-foreground"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-4">
+                          <p
+                            className={`text-[10px] font-black uppercase tracking-[0.18em] ${
+                              isPatient ? "text-muted-foreground" : "text-sky-700 dark:text-sky-300"
+                            }`}
+                          >
+                            {isPatient ? "Patient" : "Doctor"}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground">{timeLabel}</p>
+                        </div>
+                        <p className="mt-2 leading-6">{message.content}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
             <form onSubmit={onSendMessage} className="flex gap-2">
-              <Input value={chatValue} onChange={(e) => setChatValue(e.target.value)} placeholder="Type message" />
-              <Button type="submit" disabled={sending}>{sending ? "Sending..." : "Send"}</Button>
+              <Input
+                value={chatValue}
+                onChange={(e) => setChatValue(e.target.value)}
+                placeholder="Type message"
+                className="rounded-xl border-sky-500/20 focus-visible:ring-sky-500/20"
+              />
+              <Button type="submit" disabled={sending} className="rounded-xl bg-sky-600 px-5 font-black text-white shadow-lg shadow-sky-500/20 hover:bg-sky-700">
+                {sending ? "Sending..." : "Send"}
+              </Button>
             </form>
           </CardContent>
         </Card>
       </div>
 
-      <Card className="mt-4">
-        <CardHeader><CardTitle>Clinical Notes (SOAP)</CardTitle></CardHeader>
-        <CardContent className="space-y-5">
-          <form onSubmit={onSaveSoap} className="grid gap-3 md:grid-cols-2">
-            <Textarea placeholder="Subjective" value={soap.subjective} onChange={(e) => setSoap((p) => ({ ...p, subjective: e.target.value }))} required />
-            <Textarea placeholder="Objective" value={soap.objective} onChange={(e) => setSoap((p) => ({ ...p, objective: e.target.value }))} required />
-            <Textarea placeholder="Assessment" value={soap.assessment} onChange={(e) => setSoap((p) => ({ ...p, assessment: e.target.value }))} required />
-            <Textarea placeholder="Plan" value={soap.plan} onChange={(e) => setSoap((p) => ({ ...p, plan: e.target.value }))} required />
-            <div className="md:col-span-2 flex items-center gap-3">
-              <Button type="submit">{editingNoteId ? "Update SOAP Note" : "Save SOAP Note"}</Button>
-              {editingNoteId && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setEditingNoteId(null);
-                    setSoap({ subjective: "", objective: "", assessment: "", plan: "" });
-                    setStatus("SOAP form reset.");
-                  }}
-                >
-                  Cancel Edit
-                </Button>
-              )}
-              {status && <p className="text-sm text-muted-foreground">{status}</p>}
+      <Card className="rounded-[2rem] border-border/40 bg-background/70 shadow-sm">
+        <CardHeader className="p-6 pb-2">
+          <CardTitle className="flex items-center gap-2 text-xl font-black tracking-tight">
+            <FileText className="h-5 w-5 text-sky-600 dark:text-sky-300" />
+            Clinical Notes (SOAP)
+          </CardTitle>
+          <p className="text-xs font-medium text-muted-foreground">Capture structured clinical findings and maintain a clear consultation record.</p>
+        </CardHeader>
+        <CardContent className="grid items-start gap-6 p-6 pt-2 xl:grid-cols-2">
+          <div className="rounded-[1.75rem] border border-border/50 bg-muted/10 p-5 xl:sticky xl:top-6 xl:self-start">
+            <div className="mb-4">
+              <p className="font-black uppercase tracking-[0.18em] text-[11px] text-muted-foreground">Live SOAP note</p>
+              <p className="mt-1 text-xs text-muted-foreground">Document the current consultation findings here.</p>
             </div>
-          </form>
+            <form onSubmit={onSaveSoap} className="grid gap-4 md:grid-cols-2">
+              <Textarea className="min-h-[140px] rounded-2xl" placeholder="Subjective" value={soap.subjective} onChange={(e) => setSoap((p) => ({ ...p, subjective: e.target.value }))} required />
+              <Textarea className="min-h-[140px] rounded-2xl" placeholder="Objective" value={soap.objective} onChange={(e) => setSoap((p) => ({ ...p, objective: e.target.value }))} required />
+              <Textarea className="min-h-[140px] rounded-2xl" placeholder="Assessment" value={soap.assessment} onChange={(e) => setSoap((p) => ({ ...p, assessment: e.target.value }))} required />
+              <Textarea className="min-h-[140px] rounded-2xl" placeholder="Plan" value={soap.plan} onChange={(e) => setSoap((p) => ({ ...p, plan: e.target.value }))} required />
+              <div className="flex items-center gap-3 md:col-span-2">
+                <Button type="submit" className="rounded-xl font-black shadow-lg shadow-primary/15">
+                  {editingNoteId ? "Update SOAP Note" : "Save SOAP Note"}
+                </Button>
+                {editingNoteId && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="rounded-xl"
+                    onClick={() => {
+                      setEditingNoteId(null);
+                      setSoap({ subjective: "", objective: "", assessment: "", plan: "" });
+                      setStatus("SOAP form reset.");
+                    }}
+                  >
+                    Cancel Edit
+                  </Button>
+                )}
+              </div>
+            </form>
+          </div>
 
-          {error && <p className="text-sm text-destructive">{error}</p>}
-
-          <div className="space-y-3">
+          <div className="rounded-[1.75rem] border border-border/50 bg-muted/10 p-5 space-y-6">
             <div className="flex items-center justify-between">
-              <p className="font-medium">Saved SOAP notes</p>
-              <p className="text-sm text-muted-foreground">{savedNotes.length} saved</p>
+              <p className="font-black uppercase tracking-[0.18em] text-[11px] text-muted-foreground">Saved SOAP notes</p>
+              <Badge variant="outline" className="rounded-xl border-sky-500/20 px-3 text-[10px] font-black text-sky-600 dark:text-sky-300">
+                {savedNotes.length} saved
+              </Badge>
             </div>
 
             {savedNotes.length === 0 && (
-              <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
-                No SOAP notes saved yet for this consultation.
+              <div className="rounded-2xl border border-dashed p-4 text-sm text-muted-foreground">
+                No saved SOAP notes yet for this consultation. Preview history stays visible below for reference.
               </div>
             )}
 
-            {savedNotes.map((note) => (
-              <div key={note.id} className="rounded-xl border bg-muted/10 p-4">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <p className="font-semibold">Saved note</p>
-                    <p className="text-xs text-muted-foreground">
-                      Updated {new Date(note.updated_at).toLocaleString()}
-                    </p>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button type="button" size="sm" variant="outline" onClick={() => onEditSoap(note)}>
-                      <Pencil className="mr-2 h-4 w-4" />
-                      Edit
-                    </Button>
-                    <Button type="button" size="sm" variant="destructive" onClick={() => setPendingDeleteNote(note)}>
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Delete
-                    </Button>
-                  </div>
-                </div>
+            {savedNotes.length > 0 && (
+              <div className="space-y-4">
+                {savedNotes.map((note) => (
+                  <div key={note.id} className="rounded-[1.5rem] border border-border/50 bg-muted/10 p-5">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <p className="font-black">Saved note</p>
+                        <p className="text-xs text-muted-foreground">
+                          Updated {new Date(note.updated_at).toLocaleString()}
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button type="button" size="sm" variant="outline" className="rounded-xl" onClick={() => onEditSoap(note)}>
+                          <Pencil className="mr-2 h-4 w-4" />
+                          Edit
+                        </Button>
+                        <Button type="button" size="sm" variant="destructive" className="rounded-xl" onClick={() => setPendingDeleteNote(note)}>
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Delete
+                        </Button>
+                      </div>
+                    </div>
 
-                <div className="mt-4 grid gap-3 md:grid-cols-2">
-                  <div className="rounded-lg border bg-background p-3">
-                    <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Subjective</p>
-                    <p className="text-sm">{note.subjective}</p>
+                    <div className="mt-4 grid gap-3 md:grid-cols-2">
+                      <div className="rounded-xl border bg-background p-3">
+                        <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Subjective</p>
+                        <p className="text-sm">{note.subjective}</p>
+                      </div>
+                      <div className="rounded-xl border bg-background p-3">
+                        <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Objective</p>
+                        <p className="text-sm">{note.objective}</p>
+                      </div>
+                      <div className="rounded-xl border bg-background p-3">
+                        <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Assessment</p>
+                        <p className="text-sm">{note.assessment}</p>
+                      </div>
+                      <div className="rounded-xl border bg-background p-3">
+                        <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Plan</p>
+                        <p className="text-sm">{note.plan}</p>
+                      </div>
+                    </div>
                   </div>
-                  <div className="rounded-lg border bg-background p-3">
-                    <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Objective</p>
-                    <p className="text-sm">{note.objective}</p>
-                  </div>
-                  <div className="rounded-lg border bg-background p-3">
-                    <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Assessment</p>
-                    <p className="text-sm">{note.assessment}</p>
-                  </div>
-                  <div className="rounded-lg border bg-background p-3">
-                    <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Plan</p>
-                    <p className="text-sm">{note.plan}</p>
-                  </div>
-                </div>
+                ))}
               </div>
-            ))}
+            )}
           </div>
         </CardContent>
+      </Card>
+
+      <Card className="rounded-[2rem] border-border/40 bg-background/70 shadow-sm">
+        <CardHeader className="p-6 pb-3">
+          <button
+            type="button"
+            className="flex w-full items-center justify-between gap-4 text-left"
+            onClick={() => setIsHistoryOpen((prev) => !prev)}
+          >
+            <div>
+              <CardTitle className="text-xl font-black tracking-tight">Reference SOAP History</CardTitle>
+              <p className="mt-1 text-xs font-medium text-muted-foreground">
+                Preview examples stay available for reference, without mixing into live or saved SOAP notes.
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <Badge variant="outline" className="rounded-xl border-sky-500/20 px-3 text-[10px] font-black text-sky-600 dark:text-sky-300">
+                {PREVIEW_SOAP_NOTES.length} preview
+              </Badge>
+              <ChevronDown
+                className={`h-5 w-5 text-sky-600 transition-transform duration-200 dark:text-sky-300 ${
+                  isHistoryOpen ? "rotate-180" : ""
+                }`}
+              />
+            </div>
+          </button>
+        </CardHeader>
+        {isHistoryOpen && (
+          <CardContent className="space-y-4 p-6 pt-0">
+            <div className="rounded-2xl border border-sky-500/15 bg-sky-500/5 p-4 text-sm text-muted-foreground">
+              These preview notes are only examples of consultation history and remain visible even after real SOAP notes are saved.
+            </div>
+            <div className="grid gap-4 xl:grid-cols-2">
+              {PREVIEW_SOAP_NOTES.map((note) => (
+                <div key={note.id} className="rounded-[1.5rem] border border-sky-500/20 bg-gradient-to-br from-sky-500/[0.08] via-background to-cyan-400/[0.06] p-5">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <p className="font-black">History preview</p>
+                        <Badge variant="outline" className="rounded-xl border-sky-500/20 px-2.5 text-[10px] font-black text-sky-600 dark:text-sky-300">
+                          Preview
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground">{note.updatedLabel}</p>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 grid gap-3 md:grid-cols-2">
+                    <div className="rounded-xl border border-sky-500/15 bg-background/90 p-3">
+                      <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Subjective</p>
+                      <p className="text-sm">{note.subjective}</p>
+                    </div>
+                    <div className="rounded-xl border border-sky-500/15 bg-background/90 p-3">
+                      <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Objective</p>
+                      <p className="text-sm">{note.objective}</p>
+                    </div>
+                    <div className="rounded-xl border border-sky-500/15 bg-background/90 p-3">
+                      <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Assessment</p>
+                      <p className="text-sm">{note.assessment}</p>
+                    </div>
+                    <div className="rounded-xl border border-sky-500/15 bg-background/90 p-3">
+                      <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Plan</p>
+                      <p className="text-sm">{note.plan}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        )}
       </Card>
     </main>
   );

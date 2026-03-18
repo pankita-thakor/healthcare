@@ -89,6 +89,8 @@ export interface ProviderAvailabilitySlot {
   start_time: string;
   end_time: string;
   is_active: boolean;
+  /** When set, slot applies only on this date (YYYY-MM-DD). When absent, slot is recurring by day_of_week. */
+  specific_date?: string;
 }
 
 export interface ProviderProfileDetails {
@@ -145,6 +147,7 @@ type ProviderAvailabilityPayload = {
     start_time: string;
     end_time: string;
     is_active?: boolean;
+    specific_date?: string;
   }>;
 } | null;
 
@@ -680,13 +683,19 @@ function withTimeout<T>(promise: PromiseLike<T>, label: string, timeoutMs = QUER
 }
 
 function normalizeAvailabilitySlots(payload: ProviderAvailabilityPayload): ProviderAvailabilitySlot[] {
-  return (payload?.slots ?? []).map((slot, index) => ({
-    id: slot.id ?? `${slot.day_of_week}-${slot.start_time}-${slot.end_time}-${index}`,
-    day_of_week: slot.day_of_week,
-    start_time: slot.start_time,
-    end_time: slot.end_time,
-    is_active: slot.is_active ?? true
-  }));
+  return (payload?.slots ?? []).map((slot, index) => {
+    const slotKey = slot.specific_date
+      ? `${slot.specific_date}-${slot.start_time}-${slot.end_time}`
+      : `${slot.day_of_week}-${slot.start_time}-${slot.end_time}`;
+    return {
+      id: slot.id ?? `${slotKey}-${index}`,
+      day_of_week: slot.day_of_week,
+      start_time: slot.start_time,
+      end_time: slot.end_time,
+      is_active: slot.is_active ?? true,
+      specific_date: slot.specific_date
+    };
+  });
 }
 
 async function fetchProviderAvailabilityPayload(providerId: string): Promise<ProviderAvailabilityPayload> {
@@ -1168,10 +1177,30 @@ export async function fetchProviderAppointments(): Promise<ProviderAppointment[]
   }));
 }
 
-export async function saveAvailability(input: { dayOfWeek: number; startTime: string; endTime: string }) {
+export async function saveAvailability(input: {
+  dayOfWeek?: number;
+  specificDate?: string;
+  startTime: string;
+  endTime: string;
+}) {
   const providerId = await getCurrentUserId();
   let providerName = "Provider";
   let categoryName: string | null = null;
+
+  const useDate = !!input.specificDate;
+  const dayOfWeek = useDate
+    ? new Date(input.specificDate!).getDay()
+    : (input.dayOfWeek ?? 0);
+  const slotPayload = {
+    id: useDate
+      ? `${input.specificDate}-${input.startTime}-${input.endTime}`
+      : `${dayOfWeek}-${input.startTime}-${input.endTime}`,
+    day_of_week: dayOfWeek,
+    start_time: input.startTime,
+    end_time: input.endTime,
+    is_active: true as const,
+    ...(useDate && { specific_date: input.specificDate })
+  };
 
   try {
     const [{ data: user }, { data: provider }] = await Promise.all([
@@ -1189,23 +1218,27 @@ export async function saveAvailability(input: { dayOfWeek: number; startTime: st
     await saveProviderAvailabilityPayload(providerId, (current) => {
       const existingSlots = normalizeAvailabilitySlots(current);
       const deduped = existingSlots.filter((slot) => {
+        if (useDate) {
+          return !(
+            slot.specific_date === input.specificDate &&
+            slot.start_time === input.startTime &&
+            slot.end_time === input.endTime
+          );
+        }
         return !(
-          slot.day_of_week === input.dayOfWeek &&
+          !slot.specific_date &&
+          slot.day_of_week === dayOfWeek &&
           slot.start_time === input.startTime &&
           slot.end_time === input.endTime
         );
       });
 
-      deduped.push({
-        id: `${input.dayOfWeek}-${input.startTime}-${input.endTime}`,
-        day_of_week: input.dayOfWeek,
-        start_time: input.startTime,
-        end_time: input.endTime,
-        is_active: true
-      });
+      deduped.push(slotPayload);
 
       deduped.sort((a, b) => {
-        if (a.day_of_week !== b.day_of_week) return a.day_of_week - b.day_of_week;
+        const aKey = a.specific_date ?? String(a.day_of_week);
+        const bKey = b.specific_date ?? String(b.day_of_week);
+        if (aKey !== bKey) return aKey.localeCompare(bKey);
         return a.start_time.localeCompare(b.start_time);
       });
 
@@ -1222,46 +1255,70 @@ export async function saveAvailability(input: { dayOfWeek: number; startTime: st
     provider_id: providerId,
     provider_name: providerName,
     category_name: categoryName,
-    day_of_week: input.dayOfWeek,
+    day_of_week: dayOfWeek,
     start_time: input.startTime,
     end_time: input.endTime,
-    is_active: true
+    is_active: true,
+    ...(useDate && { specific_date: input.specificDate })
   });
 
-  logActivity("Updated Availability", `Saved new slot for ${WEEKDAY_LABELS[input.dayOfWeek] ?? "selected day"} at ${input.startTime}`, "availability");
+  const label = useDate
+    ? new Date(input.specificDate!).toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" })
+    : (WEEKDAY_LABELS[dayOfWeek] ?? "selected day");
+  logActivity("Updated Availability", `Saved new slot for ${label} at ${input.startTime}`, "availability");
 }
 
 export async function updateAvailability(input: {
-  originalDayOfWeek: number;
+  originalDayOfWeek?: number;
+  originalSpecificDate?: string;
   originalStartTime: string;
   originalEndTime: string;
-  dayOfWeek: number;
+  dayOfWeek?: number;
+  specificDate?: string;
   startTime: string;
   endTime: string;
 }) {
   const providerId = await getCurrentUserId();
+  const useDate = !!input.specificDate;
+  const dayOfWeek = useDate
+    ? new Date(input.specificDate!).getDay()
+    : (input.dayOfWeek ?? 0);
+  const slotPayload = {
+    id: useDate
+      ? `${input.specificDate}-${input.startTime}-${input.endTime}`
+      : `${dayOfWeek}-${input.startTime}-${input.endTime}`,
+    day_of_week: dayOfWeek,
+    start_time: input.startTime,
+    end_time: input.endTime,
+    is_active: true as const,
+    ...(useDate && { specific_date: input.specificDate })
+  };
 
   try {
     await saveProviderAvailabilityPayload(providerId, (current) => {
-      const nextSlots = normalizeAvailabilitySlots(current)
-        .filter((slot) => {
+      const nextSlots = normalizeAvailabilitySlots(current).filter((slot) => {
+        const origUseDate = !!input.originalSpecificDate;
+        if (origUseDate) {
           return !(
-            slot.day_of_week === input.originalDayOfWeek &&
+            slot.specific_date === input.originalSpecificDate &&
             slot.start_time === input.originalStartTime &&
             slot.end_time === input.originalEndTime
           );
-        });
-
-      nextSlots.push({
-        id: `${input.dayOfWeek}-${input.startTime}-${input.endTime}`,
-        day_of_week: input.dayOfWeek,
-        start_time: input.startTime,
-        end_time: input.endTime,
-        is_active: true
+        }
+        return !(
+          !slot.specific_date &&
+          slot.day_of_week === (input.originalDayOfWeek ?? 0) &&
+          slot.start_time === input.originalStartTime &&
+          slot.end_time === input.originalEndTime
+        );
       });
 
+      nextSlots.push(slotPayload);
+
       nextSlots.sort((a, b) => {
-        if (a.day_of_week !== b.day_of_week) return a.day_of_week - b.day_of_week;
+        const aKey = a.specific_date ?? String(a.day_of_week);
+        const bKey = b.specific_date ?? String(b.day_of_week);
+        if (aKey !== bKey) return aKey.localeCompare(bKey);
         return a.start_time.localeCompare(b.start_time);
       });
 
@@ -1276,36 +1333,52 @@ export async function updateAvailability(input: {
 
   removeSyncedProviderSlot({
     provider_id: providerId,
-    day_of_week: input.originalDayOfWeek,
+    day_of_week: input.originalDayOfWeek ?? 0,
     start_time: input.originalStartTime,
-    end_time: input.originalEndTime
+    end_time: input.originalEndTime,
+    ...(input.originalSpecificDate && { specific_date: input.originalSpecificDate })
   });
 
   upsertSyncedProviderSlot({
     provider_id: providerId,
     provider_name: null,
     category_name: null,
-    day_of_week: input.dayOfWeek,
+    day_of_week: dayOfWeek,
     start_time: input.startTime,
     end_time: input.endTime,
-    is_active: true
+    is_active: true,
+    ...(useDate && { specific_date: input.specificDate })
   });
 
-  logActivity(
-    "Updated Availability",
-    `Adjusted slot to ${WEEKDAY_LABELS[input.dayOfWeek] ?? "selected day"} at ${input.startTime}`,
-    "availability"
-  );
+  const label = useDate
+    ? new Date(input.specificDate!).toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" })
+    : (WEEKDAY_LABELS[dayOfWeek] ?? "selected day");
+  logActivity("Updated Availability", `Adjusted slot to ${label} at ${input.startTime}`, "availability");
 }
 
-export async function deleteAvailability(input: { dayOfWeek: number; startTime: string; endTime: string }) {
+export async function deleteAvailability(input: {
+  dayOfWeek?: number;
+  specificDate?: string;
+  startTime: string;
+  endTime: string;
+}) {
   const providerId = await getCurrentUserId();
+  const useDate = !!input.specificDate;
+  const dayOfWeek = input.dayOfWeek ?? 0;
 
   try {
     await saveProviderAvailabilityPayload(providerId, (current) => {
       const nextSlots = normalizeAvailabilitySlots(current).filter((slot) => {
+        if (useDate) {
+          return !(
+            slot.specific_date === input.specificDate &&
+            slot.start_time === input.startTime &&
+            slot.end_time === input.endTime
+          );
+        }
         return !(
-          slot.day_of_week === input.dayOfWeek &&
+          !slot.specific_date &&
+          slot.day_of_week === dayOfWeek &&
           slot.start_time === input.startTime &&
           slot.end_time === input.endTime
         );
@@ -1322,39 +1395,52 @@ export async function deleteAvailability(input: { dayOfWeek: number; startTime: 
 
   removeSyncedProviderSlot({
     provider_id: providerId,
-    day_of_week: input.dayOfWeek,
+    day_of_week: dayOfWeek,
     start_time: input.startTime,
-    end_time: input.endTime
+    end_time: input.endTime,
+    ...(useDate && { specific_date: input.specificDate })
   });
 
-  logActivity(
-    "Updated Availability",
-    `Removed slot for ${WEEKDAY_LABELS[input.dayOfWeek] ?? "selected day"} at ${input.startTime}`,
-    "availability"
-  );
+  const label = useDate
+    ? new Date(input.specificDate!).toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" })
+    : (WEEKDAY_LABELS[dayOfWeek] ?? "selected day");
+  logActivity("Updated Availability", `Removed slot for ${label} at ${input.startTime}`, "availability");
+}
+
+function slotDedupKey(slot: ProviderAvailabilitySlot) {
+  const datePart = slot.specific_date ?? String(slot.day_of_week);
+  return `${datePart}-${slot.start_time}-${slot.end_time}`;
 }
 
 export async function fetchAvailability() {
   const providerId = await getCurrentUserId();
   const localSlots = readSyncedProviderSlots()
     .filter((slot) => slot.provider_id === providerId)
-    .map((slot, index) => ({
-      id: `${slot.provider_id}-${slot.day_of_week}-${slot.start_time}-${slot.end_time}-${index}`,
-      day_of_week: slot.day_of_week,
-      start_time: slot.start_time,
-      end_time: slot.end_time,
-      is_active: slot.is_active
-    }));
+    .map((slot, index) => {
+      const slotKey = slot.specific_date
+        ? `${slot.specific_date}-${slot.start_time}-${slot.end_time}`
+        : `${slot.day_of_week}-${slot.start_time}-${slot.end_time}`;
+      return {
+        id: `${slot.provider_id}-${slotKey}-${index}`,
+        day_of_week: slot.day_of_week,
+        start_time: slot.start_time,
+        end_time: slot.end_time,
+        is_active: slot.is_active,
+        ...(slot.specific_date && { specific_date: slot.specific_date })
+      };
+    });
 
   try {
     const fallback = await fetchProviderAvailabilityPayload(providerId);
     const merged = [...normalizeAvailabilitySlots(fallback), ...localSlots];
     const deduped = new Map<string, ProviderAvailabilitySlot>();
     for (const slot of merged) {
-      deduped.set(`${slot.day_of_week}-${slot.start_time}-${slot.end_time}`, slot);
+      deduped.set(slotDedupKey(slot), slot);
     }
     return Array.from(deduped.values()).sort((a, b) => {
-      if (a.day_of_week !== b.day_of_week) return a.day_of_week - b.day_of_week;
+      const aKey = a.specific_date ?? String(a.day_of_week);
+      const bKey = b.specific_date ?? String(b.day_of_week);
+      if (aKey !== bKey) return aKey.localeCompare(bKey);
       return a.start_time.localeCompare(b.start_time);
     });
   } catch (error) {
@@ -1364,7 +1450,9 @@ export async function fetchAvailability() {
   }
 
   return localSlots.sort((a, b) => {
-    if (a.day_of_week !== b.day_of_week) return a.day_of_week - b.day_of_week;
+    const aKey = a.specific_date ?? String(a.day_of_week);
+    const bKey = b.specific_date ?? String(b.day_of_week);
+    if (aKey !== bKey) return aKey.localeCompare(bKey);
     return a.start_time.localeCompare(b.start_time);
   });
 }

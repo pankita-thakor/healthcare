@@ -8,6 +8,7 @@ export interface SyncedProviderSlot {
   start_time: string;
   end_time: string;
   is_active: boolean;
+  specific_date?: string;
 }
 
 const STORAGE_KEY = "healthflow-provider-slots";
@@ -36,32 +37,38 @@ export function writeSyncedProviderSlots(slots: SyncedProviderSlot[]) {
 
 export function upsertSyncedProviderSlot(slot: SyncedProviderSlot) {
   const existing = readSyncedProviderSlots().filter((item) => {
-    return !(
+    const sameKey =
       item.provider_id === slot.provider_id &&
-      item.day_of_week === slot.day_of_week &&
       item.start_time === slot.start_time &&
-      item.end_time === slot.end_time
-    );
+      item.end_time === slot.end_time;
+    const sameDateOrDay = slot.specific_date
+      ? item.specific_date === slot.specific_date
+      : !item.specific_date && item.day_of_week === slot.day_of_week;
+    return !(sameKey && sameDateOrDay);
   });
 
   existing.push(slot);
   existing.sort((a, b) => {
     if (a.provider_id !== b.provider_id) return a.provider_id.localeCompare(b.provider_id);
-    if (a.day_of_week !== b.day_of_week) return a.day_of_week - b.day_of_week;
+    const aKey = a.specific_date ?? String(a.day_of_week);
+    const bKey = b.specific_date ?? String(b.day_of_week);
+    if (aKey !== bKey) return aKey.localeCompare(bKey);
     return a.start_time.localeCompare(b.start_time);
   });
 
   writeSyncedProviderSlots(existing);
 }
 
-export function removeSyncedProviderSlot(slot: Pick<SyncedProviderSlot, "provider_id" | "day_of_week" | "start_time" | "end_time">) {
+export function removeSyncedProviderSlot(slot: Pick<SyncedProviderSlot, "provider_id" | "day_of_week" | "start_time" | "end_time"> & { specific_date?: string }) {
   const remaining = readSyncedProviderSlots().filter((item) => {
-    return !(
+    const sameKey =
       item.provider_id === slot.provider_id &&
-      item.day_of_week === slot.day_of_week &&
       item.start_time === slot.start_time &&
-      item.end_time === slot.end_time
-    );
+      item.end_time === slot.end_time;
+    const sameDateOrDay = slot.specific_date
+      ? item.specific_date === slot.specific_date
+      : !item.specific_date && item.day_of_week === slot.day_of_week;
+    return !(sameKey && sameDateOrDay);
   });
 
   writeSyncedProviderSlots(remaining);

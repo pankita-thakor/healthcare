@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { ChevronLeft, ChevronRight, Pencil, Trash2 } from "lucide-react";
 import {
   deleteAvailability,
   fetchAvailability,
@@ -19,71 +20,92 @@ import { Input } from "@/components/ui/input";
 
 const weekdayLabels = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
+function slotMatch(a: ProviderAvailabilitySlot, b: ProviderAvailabilitySlot) {
+  const sameTime = a.start_time === b.start_time && a.end_time === b.end_time;
+  const sameDate = a.specific_date
+    ? a.specific_date === b.specific_date
+    : !b.specific_date && a.day_of_week === b.day_of_week;
+  return sameTime && sameDate;
+}
+
 function mergeAvailabilitySlots(
   current: ProviderAvailabilitySlot[],
   next: ProviderAvailabilitySlot
 ) {
-  const deduped = current.filter((slot) => {
-    return !(
-      slot.day_of_week === next.day_of_week &&
-      slot.start_time === next.start_time &&
-      slot.end_time === next.end_time
-    );
-  });
-
+  const deduped = current.filter((slot) => !slotMatch(slot, next));
   deduped.push(next);
-
   return deduped.sort((a, b) => {
-    if (a.day_of_week !== b.day_of_week) return a.day_of_week - b.day_of_week;
+    const aKey = a.specific_date ?? String(a.day_of_week);
+    const bKey = b.specific_date ?? String(b.day_of_week);
+    if (aKey !== bKey) return aKey.localeCompare(bKey);
     return a.start_time.localeCompare(b.start_time);
   });
 }
 
 function removeAvailabilitySlot(current: ProviderAvailabilitySlot[], target: ProviderAvailabilitySlot) {
-  return current.filter((slot) => {
-    return !(
-      slot.day_of_week === target.day_of_week &&
-      slot.start_time === target.start_time &&
-      slot.end_time === target.end_time
-    );
-  });
+  return current.filter((slot) => !slotMatch(slot, target));
 }
 
-function buildUpcomingDates(slot: ProviderAvailabilitySlot) {
-  const results: string[] = [];
+function buildUpcomingDatesShort(slot: ProviderAvailabilitySlot) {
   const now = new Date();
+  if (slot.specific_date) {
+    const d = new Date(slot.specific_date);
+    const [hours, minutes] = slot.start_time.slice(0, 5).split(":").map(Number);
+    d.setHours(hours, minutes, 0, 0);
+    if (d >= now) return [d.toLocaleDateString([], { month: "short", day: "numeric" }) + ", " + d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })];
+    return [];
+  }
+  const results: string[] = [];
   const base = new Date(now);
   base.setHours(0, 0, 0, 0);
-
   for (let offset = 0; offset < 21 && results.length < 3; offset += 1) {
     const current = new Date(base);
     current.setDate(base.getDate() + offset);
     if (current.getDay() !== slot.day_of_week) continue;
-
     const [hours, minutes] = slot.start_time.slice(0, 5).split(":").map(Number);
     current.setHours(hours, minutes, 0, 0);
     if (current < now) continue;
-
-    results.push(current.toLocaleString());
+    results.push(current.toLocaleDateString([], { month: "short", day: "numeric" }) + ", " + current.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }));
   }
-
   return results;
 }
 
-function buildCalendarDays(appointments: ProviderAppointment[], availability: ProviderAvailabilitySlot[]) {
+function slotDisplayLabel(slot: ProviderAvailabilitySlot) {
+  if (slot.specific_date) {
+    return new Date(slot.specific_date).toLocaleDateString([], {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      year: "numeric"
+    });
+  }
+  return weekdayLabels[slot.day_of_week];
+}
+
+function buildCalendarDays(
+  appointments: ProviderAppointment[],
+  availability: ProviderAvailabilitySlot[],
+  startDateOffset = 0
+) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
+  const base = new Date(today);
+  base.setDate(today.getDate() + startDateOffset);
 
   return Array.from({ length: 7 }, (_, index) => {
-    const day = new Date(today);
-    day.setDate(today.getDate() + index);
+    const day = new Date(base);
+    day.setDate(base.getDate() + index);
     
     // Format local date key: YYYY-MM-DD
     const dayKey = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, "0")}-${String(day.getDate()).padStart(2, "0")}`;
     const now = new Date();
 
     const availabilitySlots = availability
-      .filter((slot) => slot.day_of_week === day.getDay() && slot.is_active !== false)
+      .filter((slot) => {
+        if (slot.is_active === false) return false;
+        if (slot.specific_date) return slot.specific_date === dayKey;
+        return slot.day_of_week === day.getDay();
+      })
       .map((slot, slotIndex) => {
         const [startHours, startMinutes] = slot.start_time.slice(0, 5).split(":").map(Number);
         const [endHours, endMinutes] = slot.end_time.slice(0, 5).split(":").map(Number);
@@ -132,12 +154,17 @@ function statusClasses(status: string) {
 export default function ProviderSchedulePage() {
   const [appointments, setAppointments] = useState<ProviderAppointment[]>([]);
   const [availability, setAvailability] = useState<ProviderAvailabilitySlot[]>([]);
-  const [slot, setSlot] = useState({ dayOfWeek: "1", startTime: "09:00", endTime: "17:00" });
+  const todayStr = (() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  })();
+  const [slot, setSlot] = useState({ date: todayStr, startTime: "09:00", endTime: "17:00" });
   const [rescheduleMap, setRescheduleMap] = useState<Record<string, string>>({});
   const [editingSlotId, setEditingSlotId] = useState<string | null>(null);
-  const [editingSlot, setEditingSlot] = useState({ dayOfWeek: "1", startTime: "09:00", endTime: "17:00" });
+  const [editingSlot, setEditingSlot] = useState({ date: todayStr, startTime: "09:00", endTime: "17:00" });
   const [slotPendingDelete, setSlotPendingDelete] = useState<ProviderAvailabilitySlot | null>(null);
   const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
+  const [calendarOffset, setCalendarOffset] = useState(0);
 
   async function load() {
     const [appointmentsResult, availabilityResult] = await Promise.allSettled([
@@ -184,20 +211,21 @@ export default function ProviderSchedulePage() {
     e.preventDefault();
     try {
       const nextSlot: ProviderAvailabilitySlot = {
-        id: `${slot.dayOfWeek}-${slot.startTime}-${slot.endTime}`,
-        day_of_week: Number(slot.dayOfWeek),
+        id: `${slot.date}-${slot.startTime}-${slot.endTime}`,
+        day_of_week: new Date(slot.date).getDay(),
         start_time: slot.startTime,
         end_time: slot.endTime,
-        is_active: true
+        is_active: true,
+        specific_date: slot.date
       };
 
       await saveAvailability({
-        dayOfWeek: nextSlot.day_of_week,
+        specificDate: slot.date,
         startTime: slot.startTime,
         endTime: slot.endTime
       });
       setAvailability((prev) => mergeAvailabilitySlots(prev, nextSlot));
-      showNotification("Availability slot saved and synced successfully.");
+      showNotification("Availability slot saved for the selected date.");
     } catch (err) {
       showNotification((err as Error).message, "error");
     }
@@ -228,8 +256,21 @@ export default function ProviderSchedulePage() {
 
   function startEditingAvailability(item: ProviderAvailabilitySlot) {
     setEditingSlotId(item.id);
+    const dateStr = item.specific_date
+      ? item.specific_date
+      : (() => {
+          const d = new Date();
+          const next = new Date(d);
+          for (let i = 0; i < 7; i++) {
+            next.setDate(d.getDate() + i);
+            if (next.getDay() === item.day_of_week) {
+              return `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, "0")}-${String(next.getDate()).padStart(2, "0")}`;
+            }
+          }
+          return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+        })();
     setEditingSlot({
-      dayOfWeek: String(item.day_of_week),
+      date: dateStr,
       startTime: item.start_time.slice(0, 5),
       endTime: item.end_time.slice(0, 5)
     });
@@ -237,19 +278,21 @@ export default function ProviderSchedulePage() {
 
   async function onUpdateAvailability(item: ProviderAvailabilitySlot) {
     const nextSlot: ProviderAvailabilitySlot = {
-      id: `${editingSlot.dayOfWeek}-${editingSlot.startTime}-${editingSlot.endTime}`,
-      day_of_week: Number(editingSlot.dayOfWeek),
+      id: `${editingSlot.date}-${editingSlot.startTime}-${editingSlot.endTime}`,
+      day_of_week: new Date(editingSlot.date).getDay(),
       start_time: editingSlot.startTime,
       end_time: editingSlot.endTime,
-      is_active: true
+      is_active: true,
+      specific_date: editingSlot.date
     };
 
     try {
       await updateAvailability({
+        originalSpecificDate: item.specific_date,
         originalDayOfWeek: item.day_of_week,
         originalStartTime: item.start_time,
         originalEndTime: item.end_time,
-        dayOfWeek: nextSlot.day_of_week,
+        specificDate: editingSlot.date,
         startTime: nextSlot.start_time,
         endTime: nextSlot.end_time
       });
@@ -265,6 +308,7 @@ export default function ProviderSchedulePage() {
   async function onDeleteAvailability(item: ProviderAvailabilitySlot) {
     try {
       await deleteAvailability({
+        specificDate: item.specific_date,
         dayOfWeek: item.day_of_week,
         startTime: item.start_time,
         endTime: item.end_time
@@ -288,7 +332,21 @@ export default function ProviderSchedulePage() {
     }, 220);
   }
 
-  const calendarDays = buildCalendarDays(appointments, availability);
+  const calendarDays = buildCalendarDays(appointments, availability, calendarOffset);
+
+  const calendarStart = (() => {
+    const d = new Date();
+    d.setDate(d.getDate() + calendarOffset);
+    return d;
+  })();
+  const calendarEnd = new Date(calendarStart);
+  calendarEnd.setDate(calendarEnd.getDate() + 6);
+  const dateRangeLabel =
+    calendarOffset === 0
+      ? "This week"
+      : calendarOffset < 0
+        ? `${calendarStart.toLocaleDateString([], { month: "short", day: "numeric" })} – ${calendarEnd.toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" })}`
+        : `${calendarStart.toLocaleDateString([], { month: "short", day: "numeric" })} – ${calendarEnd.toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" })}`;
 
   return (
     <div className="space-y-6">
@@ -296,29 +354,28 @@ export default function ProviderSchedulePage() {
         <h1 className="text-2xl font-bold tracking-tight">Appointment Scheduler</h1>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-12">
-        <Card className="lg:col-span-4 h-fit shadow-sm">
+      {/* Top row: Weekly Availability form + Active Recurring Slots side by side */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card className="h-fit shadow-sm">
           <CardHeader>
-            <CardTitle className="text-lg font-black uppercase tracking-tight">Weekly Availability</CardTitle>
-            <p className="text-xs text-muted-foreground font-normal">Define your recurring consultation hours</p>
+            <CardTitle className="text-lg font-black uppercase tracking-tight">Add Availability</CardTitle>
+            <p className="text-xs text-muted-foreground font-normal">Set consultation hours for a specific date</p>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent>
             <form onSubmit={onSaveAvailability} className="space-y-3">
               <div className="space-y-2">
-                <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/80 ml-1">Day of week</label>
-                <select
-                  className="w-full h-12 rounded-xl border border-input bg-background/50 px-3 text-sm focus:ring-2 focus:ring-primary/20 transition-all outline-none"
-                  value={slot.dayOfWeek}
-                  onChange={(e) => setSlot((prev) => ({ ...prev, dayOfWeek: e.target.value }))}
-                >
-                  <option value="0">Sunday</option>
-                  <option value="1">Monday</option>
-                  <option value="2">Tuesday</option>
-                  <option value="3">Wednesday</option>
-                  <option value="4">Thursday</option>
-                  <option value="5">Friday</option>
-                  <option value="6">Saturday</option>
-                </select>
+                <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/80 ml-1">Date</label>
+                <Input
+                  type="date"
+                  className="h-12 rounded-xl border border-input bg-background/50 text-sm focus:ring-2 focus:ring-primary/20 transition-all"
+                  value={slot.date}
+                  onChange={(e) => setSlot((prev) => ({ ...prev, date: e.target.value }))}
+                />
+                {slot.date && (
+                  <p className="text-xs font-medium text-muted-foreground ml-1">
+                    {new Date(slot.date).toLocaleDateString([], { weekday: "long", month: "short", day: "numeric", year: "numeric" })}
+                  </p>
+                )}
               </div>
               
               <div className="grid grid-cols-2 gap-3">
@@ -334,116 +391,160 @@ export default function ProviderSchedulePage() {
               
               <Button type="submit" className="w-full rounded-xl shadow-lg shadow-primary/20 h-12 font-black text-xs uppercase tracking-widest">Save Availability Slot</Button>
             </form>
+          </CardContent>
+        </Card>
 
-            <div className="pt-4 space-y-3">
-              <h3 className="text-xs font-black uppercase tracking-widest text-muted-foreground/80 ml-1">Active Recurring Slots</h3>
-              {!availability.length && <p className="text-sm text-muted-foreground italic px-1">No recurring slots saved yet.</p>}
-              <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 scrollbar-hide">
+        <Card className="h-fit shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-lg font-black uppercase tracking-tight">Your Availability Slots</CardTitle>
+            <p className="text-xs text-muted-foreground font-normal">Date-specific and recurring consultation hours</p>
+          </CardHeader>
+          <CardContent>
+            {!availability.length && <p className="text-sm text-muted-foreground italic px-1">No availability slots saved yet.</p>}
+            <div className="space-y-2 max-h-[280px] overflow-y-auto pr-2 scrollbar-hide">
                 {availability.map((item) => (
                   <div
                     key={item.id}
-                    className="relative overflow-hidden rounded-2xl border border-sky-500/20 bg-gradient-to-br from-sky-500/[0.10] via-background to-cyan-400/[0.08] p-4 shadow-sm transition-all hover:border-sky-500/35 hover:shadow-md"
+                    className="relative overflow-hidden rounded-xl border border-sky-500/20 bg-gradient-to-br from-sky-500/[0.10] via-background to-cyan-400/[0.08] p-2.5 shadow-sm transition-all hover:border-sky-500/35 hover:shadow-md"
                   >
                     <div className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-sky-500 to-cyan-400" />
-                    <div className="flex items-center justify-between gap-3 pl-2">
-                      <div>
-                        <p className="font-black text-sm text-foreground">
-                          {weekdayLabels[item.day_of_week]}
+                    <div className="flex items-center justify-between gap-2 pl-2">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-black text-xs text-foreground truncate">
+                          {slotDisplayLabel(item)}
                         </p>
-                        <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.22em] text-sky-700 dark:text-sky-300">
-                          Recurring availability
+                        <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-sky-700 dark:text-sky-300">
+                          {item.specific_date ? "Specific date" : "Recurring"}
                         </p>
                       </div>
-                      <span className="rounded-xl border border-sky-500/20 bg-sky-500/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-sky-700 dark:text-sky-300">
-                         {item.start_time.slice(0, 5)} - {item.end_time.slice(0, 5)}
-                      </span>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <span className="rounded-lg border border-sky-500/20 bg-sky-500/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.12em] text-sky-700 dark:text-sky-300">
+                          {item.start_time.slice(0, 5)}–{item.end_time.slice(0, 5)}
+                        </span>
+                        {editingSlotId !== item.id && (
+                          <>
+                            <Button
+                              type="button"
+                              size="icon"
+                              variant="ghost"
+                              className="h-7 w-7 rounded-lg text-sky-600 hover:bg-sky-500/10 hover:text-sky-700 dark:text-sky-400"
+                              onClick={() => startEditingAvailability(item)}
+                              aria-label="Edit slot"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              type="button"
+                              size="icon"
+                              variant="ghost"
+                              className="h-7 w-7 rounded-lg text-rose-600 hover:bg-rose-500/10 hover:text-rose-700 dark:text-rose-400"
+                              onClick={() => setSlotPendingDelete(item)}
+                              aria-label="Delete slot"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </>
+                        )}
+                      </div>
                     </div>
-                    <p className="mt-3 pl-2 text-[10px] leading-relaxed text-muted-foreground font-medium">
-                      Next: {buildUpcomingDates(item).slice(0, 2).join(" • ") || "None scheduled"}
+                    <p className="mt-1.5 pl-2 text-[10px] leading-tight text-muted-foreground font-medium">
+                      {buildUpcomingDatesShort(item).slice(0, 2).join(" • ") || "None scheduled"}
                     </p>
-                    {editingSlotId === item.id ? (
-                      <div className="mt-4 space-y-3 rounded-xl border border-sky-500/15 bg-background/80 p-3 backdrop-blur-sm">
-                        <select
-                          className="w-full h-10 rounded-xl border border-sky-500/20 bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-sky-500/20"
-                          value={editingSlot.dayOfWeek}
-                          onChange={(e) => setEditingSlot((prev) => ({ ...prev, dayOfWeek: e.target.value }))}
-                        >
-                          <option value="0">Sunday</option>
-                          <option value="1">Monday</option>
-                          <option value="2">Tuesday</option>
-                          <option value="3">Wednesday</option>
-                          <option value="4">Thursday</option>
-                          <option value="5">Friday</option>
-                          <option value="6">Saturday</option>
-                        </select>
+                    {editingSlotId === item.id && (
+                      <div className="mt-3 space-y-2 rounded-lg border border-sky-500/15 bg-background/80 p-2.5 backdrop-blur-sm">
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80">Date</label>
+                          <Input
+                            type="date"
+                            className="h-9 rounded-lg border border-sky-500/20 bg-background px-2.5 text-xs outline-none focus:ring-2 focus:ring-sky-500/20"
+                            value={editingSlot.date}
+                            onChange={(e) => setEditingSlot((prev) => ({ ...prev, date: e.target.value }))}
+                          />
+                          {editingSlot.date && (
+                            <p className="text-[10px] font-medium text-muted-foreground">
+                              {new Date(editingSlot.date).toLocaleDateString([], { weekday: "long", month: "short", day: "numeric", year: "numeric" })}
+                            </p>
+                          )}
+                        </div>
                         <div className="grid grid-cols-2 gap-2">
                           <Input
                             type="time"
-                            className="rounded-xl h-10 border-sky-500/20 bg-background"
+                            className="rounded-lg h-9 border-sky-500/20 bg-background text-xs"
                             value={editingSlot.startTime}
                             onChange={(e) => setEditingSlot((prev) => ({ ...prev, startTime: e.target.value }))}
                           />
                           <Input
                             type="time"
-                            className="rounded-xl h-10 border-sky-500/20 bg-background"
+                            className="rounded-lg h-9 border-sky-500/20 bg-background text-xs"
                             value={editingSlot.endTime}
                             onChange={(e) => setEditingSlot((prev) => ({ ...prev, endTime: e.target.value }))}
                           />
                         </div>
-                        <div className="flex gap-2 pl-2">
-                          <Button type="button" size="sm" className="flex-1 rounded-xl text-[11px] font-black uppercase tracking-wider" onClick={() => onUpdateAvailability(item)}>
+                        <div className="flex gap-2">
+                          <Button type="button" size="sm" className="flex-1 h-8 rounded-lg text-[10px] font-black" onClick={() => onUpdateAvailability(item)}>
                             Save
                           </Button>
                           <Button
                             type="button"
                             size="sm"
                             variant="outline"
-                            className="flex-1 rounded-xl text-[11px] font-black uppercase tracking-wider"
+                            className="flex-1 h-8 rounded-lg text-[10px] font-black"
                             onClick={() => setEditingSlotId(null)}
                           >
                             Cancel
                           </Button>
                         </div>
                       </div>
-                    ) : (
-                      <div className="mt-4 flex gap-2 pl-2">
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          className="flex-1 rounded-xl border-sky-500/20 bg-background/70 text-[11px] font-black uppercase tracking-wider text-sky-700 hover:bg-sky-500/10 hover:text-sky-800 dark:text-sky-300"
-                          onClick={() => startEditingAvailability(item)}
-                        >
-                          Edit
-                        </Button>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="destructive"
-                          className="flex-1 rounded-xl text-[11px] font-black uppercase tracking-wider"
-                          onClick={() => setSlotPendingDelete(item)}
-                        >
-                          Delete
-                        </Button>
-                      </div>
                     )}
                   </div>
                 ))}
-              </div>
             </div>
           </CardContent>
         </Card>
+      </div>
 
-        <Card className="lg:col-span-8 shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+      {/* Full-width calendar below */}
+      <Card className="shadow-sm">
+          <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between space-y-0 pb-4">
             <div>
               <CardTitle className="text-lg font-black uppercase tracking-tight">Appointments Calendar</CardTitle>
-              <p className="text-xs text-muted-foreground font-normal">Manage your upcoming consultations for the next 7 days</p>
+              <p className="text-xs text-muted-foreground font-normal">{dateRangeLabel}</p>
             </div>
-            <div className="flex gap-1.5">
-              <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></div>
-              <div className="h-2 w-2 rounded-full bg-primary/40"></div>
-              <div className="h-2 w-2 rounded-full bg-muted"></div>
+            <div className="flex items-center gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-9 rounded-xl gap-1.5 px-3 font-bold"
+                onClick={() => setCalendarOffset((o) => o - 7)}
+              >
+                <ChevronLeft className="h-4 w-4" />
+                Prev
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-9 rounded-xl gap-1.5 px-3 font-bold"
+                onClick={() => setCalendarOffset((o) => o + 7)}
+              >
+                Next
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-9 rounded-xl px-3 text-xs font-bold text-muted-foreground hover:text-foreground"
+                onClick={() => setCalendarOffset(0)}
+              >
+                Today
+              </Button>
+              <div className="hidden sm:flex gap-1.5 ml-1">
+                <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                <div className="h-2 w-2 rounded-full bg-primary/40"></div>
+                <div className="h-2 w-2 rounded-full bg-muted"></div>
+              </div>
             </div>
           </CardHeader>
           <CardContent className="p-0 sm:p-6 sm:pt-0">
@@ -552,47 +653,49 @@ export default function ProviderSchedulePage() {
             )}
           </CardContent>
         </Card>
-      </div>
 
-      {slotPendingDelete && (
-        <div
-          className={`fixed inset-0 z-50 flex items-center justify-center bg-background/60 p-4 backdrop-blur-sm transition-all duration-200 ${
-            isDeleteModalVisible ? "opacity-100" : "opacity-0"
-          }`}
-        >
+      {slotPendingDelete ? (() => {
+        const item = slotPendingDelete as ProviderAvailabilitySlot;
+        return (
           <div
-            className={`w-full max-w-md rounded-[1.75rem] border border-border/60 bg-background p-6 shadow-2xl transition-all duration-200 ${
-              isDeleteModalVisible ? "translate-y-0 scale-100 opacity-100" : "translate-y-4 scale-95 opacity-0"
+            className={`fixed inset-0 z-50 flex items-center justify-center bg-background/60 p-4 backdrop-blur-sm transition-all duration-200 ${
+              isDeleteModalVisible ? "opacity-100" : "opacity-0"
             }`}
           >
-            <div className="space-y-3">
-              <p className="text-[11px] font-black uppercase tracking-[0.24em] text-destructive">Confirm Delete</p>
-              <h2 className="text-xl font-black tracking-tight text-foreground">Delete recurring availability slot?</h2>
-              <p className="text-sm leading-6 text-muted-foreground">
-                This will remove the slot for `{weekdayLabels[slotPendingDelete.day_of_week]}` from `{slotPendingDelete.start_time.slice(0, 5)}` to `{slotPendingDelete.end_time.slice(0, 5)}`.
-              </p>
-            </div>
-            <div className="mt-6 flex gap-3">
-              <Button
-                type="button"
-                variant="outline"
-                className="flex-1 rounded-xl"
-                onClick={closeDeleteModal}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="button"
-                variant="destructive"
-                className="flex-1 rounded-xl"
-                onClick={() => void onDeleteAvailability(slotPendingDelete)}
-              >
-                Delete Slot
-              </Button>
+            <div
+              className={`w-full max-w-md rounded-[1.75rem] border border-border/60 bg-background p-6 shadow-2xl transition-all duration-200 ${
+                isDeleteModalVisible ? "translate-y-0 scale-100 opacity-100" : "translate-y-4 scale-95 opacity-0"
+              }`}
+            >
+              <div className="space-y-3">
+                <p className="text-[11px] font-black uppercase tracking-[0.24em] text-destructive">Confirm Delete</p>
+                <h2 className="text-xl font-black tracking-tight text-foreground">Delete recurring availability slot?</h2>
+                <p className="text-sm leading-6 text-muted-foreground">
+                  This will remove the slot for {slotDisplayLabel(item)} from {item.start_time.slice(0, 5)} to {item.end_time.slice(0, 5)}.
+                </p>
+              </div>
+              <div className="mt-6 flex gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1 rounded-xl"
+                  onClick={closeDeleteModal}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  className="flex-1 rounded-xl"
+                  onClick={() => void onDeleteAvailability(item)}
+                >
+                  Delete Slot
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })() : null}
     </div>
   );
 }

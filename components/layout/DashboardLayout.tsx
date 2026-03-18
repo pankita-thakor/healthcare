@@ -85,8 +85,8 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-background">
       <GlobalNotification />
       <Header />
-      <div className="flex w-full">
-        <aside className="hidden min-h-[calc(100vh-4rem)] w-72 shrink-0 border-r bg-muted/20 px-5 py-6 md:block">
+      <div className="flex w-full items-start">
+        <aside className="sticky top-16 hidden h-[calc(100vh-4rem)] w-72 shrink-0 overflow-y-auto border-r bg-muted/20 px-5 py-6 md:block">
           <p className="mb-3 text-xs uppercase tracking-wider text-muted-foreground">Navigation</p>
           <nav className="space-y-1">
             {links.map((link) => (
