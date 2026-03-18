@@ -111,21 +111,21 @@ export function Header() {
         <button
           type="button"
           onClick={() => router.push(dashboardPath)}
-          className="group flex items-center gap-2.5 transition-transform active:scale-95"
+          className="group flex items-center gap-2.5 transition-transform"
           aria-label="Go to dashboard"
         >
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg shadow-primary/20 group-hover:rotate-12 transition-transform duration-300">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#3b82f6] to-[#11927d] text-white shadow-lg shadow-[#3b82f6]/20 group-hover:rotate-12 transition-transform duration-300">
              <HeartPulse className="h-5 w-5" />
           </div>
           <span className="font-display text-xl font-black tracking-tighter text-foreground">
-            Healthy<span className="text-primary">fy</span>
+            Healthyfy
           </span>
         </button>
 
         <div className="flex items-center gap-3">
           <button
             type="button"
-            className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-border/60 bg-background/50 text-muted-foreground transition-all hover:bg-muted hover:text-foreground active:scale-95"
+            className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-border/60 bg-background/50 text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
             aria-label="Notifications"
             title="Notifications"
           >
@@ -140,7 +140,7 @@ export function Header() {
           <ThemeToggle />
 
           <details className="relative group/details">
-            <summary className="list-none cursor-pointer rounded-xl border border-border/60 bg-background/50 px-4 py-2 text-sm font-bold text-foreground transition-all hover:bg-muted active:scale-95">
+            <summary className="list-none cursor-pointer rounded-xl border border-border/60 bg-background/50 px-4 py-2 text-sm font-bold text-foreground transition-all hover:bg-muted">
               <div className="flex items-center gap-2">
                 <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-black">
                    {fullName.slice(0, 1).toUpperCase()}
@@ -149,17 +149,17 @@ export function Header() {
                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="opacity-40"><path d="m6 9 6 6 6-6"/></svg>
               </div>
             </summary>
-            <div className="absolute right-0 mt-3 w-56 origin-top-right overflow-hidden rounded-2xl border border-border/40 bg-background/95 p-1.5 shadow-2xl backdrop-blur-xl animate-in fade-in zoom-in-95 duration-200">
-              <div className="px-3 py-2.5 mb-1 border-b border-border/40">
-                 <p className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/60">Account</p>
-                 <p className="text-xs font-bold truncate">{fullName}</p>
+            <div className="absolute right-0 mt-3 w-56 origin-top-right overflow-hidden rounded-2xl border border-border bg-card p-1.5 shadow-2xl backdrop-blur-xl animate-in fade-in zoom-in-95 duration-200 dark:border-border dark:bg-card/95">
+              <div className="px-3 py-2.5 mb-1 border-b border-border">
+                 <p className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground">Account</p>
+                 <p className="text-sm font-bold truncate text-foreground">{fullName}</p>
               </div>
               <button
                 type="button"
                 onClick={() => router.push(profilePath as never)}
-                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition-all hover:bg-muted active:bg-muted/80"
+                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-foreground transition-all hover:bg-muted hover:text-foreground dark:hover:bg-white/10"
               >
-                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/5 text-primary">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary dark:bg-primary/20">
                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 </div>
                 Profile Settings
@@ -167,19 +167,19 @@ export function Header() {
               <button
                 type="button"
                 onClick={() => router.push(settingsPath as never)}
-                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition-all hover:bg-muted active:bg-muted/80"
+                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-foreground transition-all hover:bg-muted hover:text-foreground dark:hover:bg-white/10"
               >
-                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-500/5 text-amber-600">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400">
                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                 </div>
                 Security
               </button>
-              <div className="my-1 h-px bg-border/40" />
+              <div className="my-1 h-px bg-border" />
               <button 
                 onClick={onLogout}
-                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm font-bold text-destructive transition-all hover:bg-destructive/5 active:bg-destructive/10"
+                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm font-bold text-destructive dark:text-red-400 transition-all hover:bg-destructive/10 hover:text-destructive dark:hover:bg-red-500/20 dark:hover:text-red-300"
               >
-                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-destructive/5">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-destructive/10 dark:bg-red-500/20">
                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
                 </div>
                 Sign Out

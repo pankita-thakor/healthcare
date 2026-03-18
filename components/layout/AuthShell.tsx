@@ -64,7 +64,7 @@ export function AuthShell({
           <div className="space-y-8">
             <div className="space-y-6">
               <Link href="/" className="inline-flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/25 ring-1 ring-white/20">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-[#3b82f6] to-[#11927d] text-white shadow-lg shadow-[#3b82f6]/25 ring-1 ring-white/20">
                   <HeartPulse className="h-6 w-6" />
                 </div>
                 <div>

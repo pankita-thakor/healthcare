@@ -82,12 +82,12 @@ export default function ProviderDashboardPage() {
               </p>
             </div>
             <div className="flex flex-wrap gap-4 pt-4">
-              <Button asChild size="lg" className="rounded-2xl h-14 px-10 font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/30 transition-all hover:scale-105 hover:shadow-primary/40">
+              <Button asChild size="lg" className="rounded-2xl h-14 px-10 font-black text-xs uppercase tracking-widest shadow-xl transition-all">
                 <Link href="/dashboard/provider/schedule" className="flex items-center gap-2">
                   <Calendar className="h-4 w-4" /> Start Consultation
                 </Link>
               </Button>
-              <Button asChild variant="outline" size="lg" className="rounded-2xl h-14 px-10 font-black text-xs uppercase tracking-widest border-slate-700 bg-slate-800/40 backdrop-blur-md hover:bg-slate-800 hover:text-white transition-all hover:scale-105">
+              <Button asChild variant="outline" size="lg" className="rounded-2xl h-14 px-10 font-black text-xs uppercase tracking-widest border-slate-700 bg-slate-800/40 backdrop-blur-md hover:bg-slate-800 hover:text-white transition-all">
                 <Link href="/dashboard/provider/patients" className="flex items-center gap-2">
                   <Users className="h-4 w-4" /> Directory
                 </Link>
@@ -205,30 +205,30 @@ export default function ProviderDashboardPage() {
 
         {/* Dynamic Interactive Sidebar */}
         <div className="space-y-8">
-          <Card className="overflow-hidden rounded-[2.5rem] border-none bg-gradient-to-br from-primary/10 via-background to-emerald-500/5 shadow-2xl ring-1 ring-border/50">
+          <Card className="overflow-hidden rounded-[2.5rem] border-none bg-card shadow-2xl ring-1 ring-border/50">
             <CardHeader className="p-10 pb-4 flex items-center justify-between">
               <div>
                 <CardTitle className="text-xl font-black tracking-tight uppercase">Core Conditions</CardTitle>
                 <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Case Load Focus</p>
               </div>
-              <div className="h-10 w-10 rounded-xl bg-white/50 backdrop-blur-md shadow-sm border border-border/40 flex items-center justify-center">
+              <div className="h-10 w-10 rounded-xl bg-primary/10 dark:bg-primary/20 flex items-center justify-center border border-border/40">
                  <ShieldCheck className="h-5 w-5 text-primary" />
               </div>
             </CardHeader>
             <CardContent className="px-10 pb-10 space-y-4">
               {data.topConditions.map((condition, idx) => (
-                <div key={condition.label} className="group flex cursor-default items-center justify-between rounded-3xl border border-border/40 bg-white/40 backdrop-blur-sm p-5 transition-all hover:bg-white hover:shadow-lg hover:-translate-y-1">
+                <div key={condition.label} className="group flex cursor-default items-center justify-between rounded-3xl border border-border bg-card/80 dark:bg-muted/30 p-5 transition-all hover:bg-muted/50 dark:hover:bg-muted/50 hover:shadow-lg hover:-translate-y-1">
                   <div className="flex items-center gap-4">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 font-black text-xs text-primary group-hover:bg-primary group-hover:text-white transition-all">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/15 dark:bg-primary/25 font-black text-xs text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-all">
                        {idx + 1}
                     </div>
                     <div>
-                      <p className="text-sm font-black text-foreground/90">{condition.label}</p>
-                      <p className="text-xs font-bold text-muted-foreground/60 uppercase">Impact Score High</p>
+                      <p className="text-sm font-black text-foreground">{condition.label}</p>
+                      <p className="text-xs font-bold text-muted-foreground uppercase">Impact Score High</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <span className="text-2xl font-black text-primary group-hover:scale-110 block transition-transform">{condition.patients}</span>
+                    <span className="text-2xl font-black text-primary block transition-transform">{condition.patients}</span>
                     <p className="text-xs font-bold text-muted-foreground uppercase">Patients</p>
                   </div>
                 </div>
@@ -262,18 +262,18 @@ export default function ProviderDashboardPage() {
           <div className="grid grid-cols-2 gap-4">
              <button 
                 onClick={() => setIsSoapModalOpen(true)}
-                className="flex flex-col items-center justify-center p-6 rounded-[2rem] bg-white shadow-sm border border-border/40 hover:shadow-xl hover:border-primary/20 transition-all group"
+                className="flex flex-col items-center justify-center p-6 rounded-[2rem] bg-card shadow-sm border border-border hover:shadow-xl hover:border-primary hover:bg-primary/5 dark:hover:border-primary dark:hover:bg-primary/10 dark:hover:shadow-[0_0_20px_-5px_rgba(59,130,246,0.4)] transition-all group"
              >
-                <div className="h-12 w-12 rounded-2xl bg-primary/5 flex items-center justify-center mb-3 group-hover:bg-primary group-hover:text-white transition-all">
-                   <Plus className="h-6 w-6" />
+                <div className="h-12 w-12 rounded-2xl bg-primary/15 dark:bg-primary/30 flex items-center justify-center mb-3 group-hover:bg-primary group-hover:text-primary-foreground transition-all">
+                   <Plus className="h-6 w-6 text-primary dark:text-white group-hover:text-primary-foreground stroke-[2.5]" />
                 </div>
-                <span className="text-xs font-black uppercase tracking-widest">New SOAP</span>
+                <span className="text-xs font-black uppercase tracking-widest text-foreground">New SOAP</span>
              </button>
-             <button className="flex flex-col items-center justify-center p-6 rounded-[2rem] bg-white shadow-sm border border-border/40 hover:shadow-xl hover:border-emerald-500/20 transition-all group">
-                <div className="h-12 w-12 rounded-2xl bg-emerald-500/5 flex items-center justify-center mb-3 group-hover:bg-emerald-500 group-hover:text-white transition-all">
-                   <MessageSquare className="h-6 w-6" />
+             <button className="flex flex-col items-center justify-center p-6 rounded-[2rem] bg-card shadow-sm border border-border hover:shadow-xl hover:border-primary hover:bg-primary/5 dark:hover:border-primary dark:hover:bg-primary/10 dark:hover:shadow-[0_0_20px_-5px_rgba(59,130,246,0.4)] transition-all group">
+                <div className="h-12 w-12 rounded-2xl bg-primary/15 dark:bg-primary/30 flex items-center justify-center mb-3 group-hover:bg-primary group-hover:text-primary-foreground transition-all">
+                   <MessageSquare className="h-6 w-6 text-primary dark:text-white group-hover:text-primary-foreground stroke-[2.5]" />
                 </div>
-                <span className="text-xs font-black uppercase tracking-widest">BroadCast</span>
+                <span className="text-xs font-black uppercase tracking-widest text-foreground">BroadCast</span>
              </button>
           </div>
         </div>

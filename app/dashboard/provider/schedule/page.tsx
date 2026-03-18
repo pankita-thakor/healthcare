@@ -1,9 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, Pencil, Trash2, Calendar as CalendarIcon, Check, Plus, CheckCircle2, List, Loader2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Pencil, Trash2, Calendar as CalendarIcon, Check, CheckCircle2, List, Loader2 } from "lucide-react";
 import { format, parseISO, startOfDay, addDays } from "date-fns";
 import {
   deleteAvailability,
@@ -388,19 +387,9 @@ export default function ProviderSchedulePage() {
 
   return (
     <div className="space-y-10 pb-10  animate-in fade-in duration-500">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground/90">Appointment Scheduler</h1>
-          <p className="text-muted-foreground mt-1 text-base">Manage your availability and upcoming consultations.</p>
-        </div>
-        <div className="flex gap-2">
-           <Button variant="outline" className="rounded-xl h-11 border-border/40 bg-card/50 backdrop-blur-sm" asChild>
-              <Link href="/dashboard/provider">Dashboard</Link>
-           </Button>
-           <Button className="rounded-xl h-11 shadow-xl shadow-primary/20">
-              <Plus className="h-4 w-4 mr-2" /> New Slot
-           </Button>
-        </div>
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight text-foreground/90">Appointment Scheduler</h1>
+        <p className="text-muted-foreground mt-1 text-base">Manage your availability and upcoming consultations.</p>
       </div>
 
       {/* Compact sync stats bar */}
@@ -463,7 +452,7 @@ export default function ProviderSchedulePage() {
                   </div>
                 </div>
                 
-                <Button type="submit" className="w-full rounded-[1.25rem] shadow-xl shadow-primary/20 h-14 font-black text-xs uppercase tracking-widest transition-all hover:scale-[1.02] active:scale-95">
+                <Button type="submit" className="w-full rounded-[1.25rem] shadow-xl h-14 font-black text-xs uppercase tracking-widest transition-all">
                   Save Availability Slot
                 </Button>
               </form>

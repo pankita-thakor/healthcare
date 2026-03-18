@@ -13,7 +13,7 @@ export function MetricsCard({
   title: string; 
   value: string; 
   change: string;
-  variant?: "default" | "primary" | "emerald";
+  variant?: "default" | "primary" | "emerald" | "sky";
   icon?: LucideIcon;
 }) {
   return (
@@ -21,7 +21,7 @@ export function MetricsCard({
       <CardContent className="p-6 flex flex-col justify-between h-full min-h-[140px]">
         <div className="flex justify-between items-start">
           <div className="space-y-1">
-            <p className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/70 group-hover:text-primary transition-colors">
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/70 group-hover:text-sky-500 transition-colors">
               {title}
             </p>
             <h3 className="text-4xl font-black tracking-tighter text-foreground">
@@ -30,8 +30,9 @@ export function MetricsCard({
           </div>
           {Icon && (
             <div className={cn(
-              "h-12 w-12 rounded-2xl flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:rotate-3 shadow-sm",
+              "h-12 w-12 rounded-2xl flex items-center justify-center transition-all duration-300 group-hover:rotate-3 shadow-sm",
               variant === "primary" ? "bg-primary/10 text-primary shadow-primary/10" : 
+              variant === "sky" ? "bg-sky-500/10 text-sky-600 shadow-sky-500/10" :
               variant === "emerald" ? "bg-emerald-500/10 text-emerald-600 shadow-emerald-500/10" : 
               "bg-muted text-muted-foreground shadow-muted/50"
             )}>
@@ -43,16 +44,17 @@ export function MetricsCard({
           <Badge 
             variant="secondary" 
             className={cn(
-              "rounded-xl px-3 py-1 text-xs font-bold uppercase tracking-wider border-none",
+              "rounded-xl px-3 py-1 text-[10px] font-bold uppercase tracking-wider border-none",
               variant === "primary" ? "bg-primary/10 text-primary" : 
+              variant === "sky" ? "bg-sky-500/10 text-sky-600" :
               variant === "emerald" ? "bg-emerald-500/10 text-emerald-600" : 
               "bg-muted text-muted-foreground"
             )}
           >
             {change}
           </Badge>
-          <div className="h-8 w-8 rounded-full bg-primary/5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 -translate-x-2 group-hover:translate-x-0">
-             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-primary"><path d="m9 18 6-6-6-6"/></svg>
+          <div className="h-8 w-8 rounded-full bg-sky-500/5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 -translate-x-2 group-hover:translate-x-0">
+             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-sky-500"><path d="m9 18 6-6-6-6"/></svg>
           </div>
         </div>
       </CardContent>

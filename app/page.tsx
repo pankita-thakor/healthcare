@@ -266,15 +266,15 @@ export default function HomePage() {
 
       <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/70 backdrop-blur-xl">
         <div className="container flex h-16 items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5 transition-all hover:scale-105 active:scale-95">
+          <Link href="/" className="flex items-center gap-2.5 transition-all">
             <motion.div 
               whileHover={{ rotate: 180 }}
               transition={{ type: "spring", stiffness: 260, damping: 20 }}
-              className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+              className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#3b82f6] to-[#11927d] text-white shadow-lg shadow-[#3b82f6]/20"
             >
               <HeartPulse className="h-6 w-6" />
             </motion.div>
-            <span className="font-display text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70">
+            <span className="font-display text-xl font-bold tracking-tight text-foreground">
               Healthyfy
             </span>
           </Link>
@@ -295,7 +295,7 @@ export default function HomePage() {
             <Link href="/login" className="hidden text-sm font-semibold hover:text-primary sm:block px-4">
               Login
             </Link>
-            <Button asChild className="rounded-full px-6 font-bold shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all">
+            <Button asChild className="rounded-full px-6 font-bold shadow-lg transition-all">
               <Link href="/signup">Get Started</Link>
             </Button>
           </div>
@@ -347,7 +347,7 @@ export default function HomePage() {
                   {[1, 2, 3, 4, 5].map((i) => (
                     <motion.div 
                       key={i} 
-                      whileHover={{ y: -5, scale: 1.1, zIndex: 10 }}
+                      whileHover={{ y: -5, zIndex: 10 }}
                       className="h-12 w-12 rounded-full border-2 border-background bg-muted overflow-hidden cursor-pointer"
                     >
                       <Image 
@@ -379,7 +379,7 @@ export default function HomePage() {
               
               {/* Interactive Phone Mockup */}
               <motion.div 
-                whileHover={{ rotateY: 5, rotateX: -5, scale: 1.02 }}
+                whileHover={{ rotateY: 5, rotateX: -5 }}
               className="animate-soft-float-delayed relative z-10 w-full max-w-[420px] mx-auto overflow-hidden rounded-[3rem] border-8 border-foreground/5 bg-background shadow-[0_0_50px_-12px_rgba(0,0,0,0.25)] shadow-primary/10"
               >
                 <div className="absolute top-0 inset-x-0 h-8 flex items-center justify-center gap-1.5 bg-muted/20">
@@ -529,7 +529,7 @@ export default function HomePage() {
                 whileHover={{ y: -10 }}
                 className="surface-sheen group relative overflow-hidden p-8 rounded-[2.5rem] border border-border/60 bg-background/50 backdrop-blur-sm transition-all hover:border-primary/40 hover:shadow-2xl hover:shadow-primary/5"
               >
-                <div className={`h-16 w-16 rounded-[1.5rem] ${feature.color} flex items-center justify-center mb-8 transition-transform group-hover:scale-110 group-hover:rotate-6 duration-300`}>
+                <div className={`h-16 w-16 rounded-[1.5rem] ${feature.color} flex items-center justify-center mb-8 transition-transform group-hover:rotate-6 duration-300`}>
                   <feature.icon className="h-8 w-8" />
                 </div>
                 <h3 className="text-2xl font-bold mb-4">{feature.title}</h3>
@@ -679,7 +679,7 @@ export default function HomePage() {
                          src={doctor.image}
                          alt={doctor.name}
                          fill
-                         className="object-cover transition-transform duration-700 group-hover:scale-110"
+                         className="object-cover transition-transform duration-700"
                          onError={() =>
                            setBrokenDoctorImages((currentState) => ({
                              ...currentState,
@@ -796,7 +796,6 @@ export default function HomePage() {
         {/* CTA with Creative Perspective */}
         <section className="container py-24 lg:py-40">
            <motion.div 
-             whileHover={{ scale: 1.01 }}
              className="relative rounded-[4rem] bg-foreground text-background overflow-hidden p-12 lg:p-32 text-center"
            >
               <div className="absolute inset-0 pointer-events-none opacity-20 [background-image:linear-gradient(45deg,rgba(255,255,255,0.05)_25%,transparent_25%,transparent_50%,rgba(255,255,255,0.05)_50%,rgba(255,255,255,0.05)_75%,transparent_75%,transparent)] [background-size:40px_40px]" />
@@ -810,7 +809,7 @@ export default function HomePage() {
                    Join 75,000+ modern families who have taken control of their health. The first step is just a click away.
                  </p>
                  <div className="flex flex-wrap justify-center gap-6 pt-6">
-                    <Button size="lg" className="rounded-full px-12 h-16 text-xl font-black bg-primary text-foreground hover:scale-110 active:scale-95 transition-all shadow-2xl shadow-primary/40" asChild>
+                    <Button size="lg" className="rounded-full px-12 h-16 text-xl font-black text-white transition-all shadow-2xl" asChild>
                        <Link href="/signup">Get Started Now</Link>
                     </Button>
                     <Button
@@ -843,10 +842,10 @@ export default function HomePage() {
           <div className="grid gap-20 lg:grid-cols-4 mb-24">
             <div className="lg:col-span-2 space-y-10">
               <Link href="/" className="flex items-center gap-3">
-                <div className="h-12 w-12 rounded-2xl bg-primary text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/20">
+                <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-[#3b82f6] to-[#11927d] text-white flex items-center justify-center shadow-lg shadow-[#3b82f6]/20">
                   <HeartPulse className="h-7 w-7" />
                 </div>
-                <span className="font-display text-2xl font-black tracking-tight">Healthyfy</span>
+                <span className="font-display text-2xl font-black tracking-tight text-foreground">Healthyfy</span>
               </Link>
               <p className="max-w-md text-xl text-muted-foreground font-medium leading-relaxed">
                 We&apos;re building the infrastructure for a healthier world. One consultation, one AI insight, and one family at a time.
@@ -855,7 +854,7 @@ export default function HomePage() {
                  {[MessageCircle, Shield, Smartphone, Activity].map((Icon, i) => (
                    <motion.div 
                     key={i}
-                    whileHover={{ y: -5, scale: 1.1 }}
+                    whileHover={{ y: -5 }}
                     className="h-12 w-12 rounded-2xl bg-muted/50 border border-border flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-all cursor-pointer shadow-sm"
                    >
                       <Icon className="h-5 w-5" />
