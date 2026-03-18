@@ -21,7 +21,7 @@ export function MetricsCard({
       <CardContent className="p-6 flex flex-col justify-between h-full min-h-[140px]">
         <div className="flex justify-between items-start">
           <div className="space-y-1">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/70 group-hover:text-primary transition-colors">
+            <p className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/70 group-hover:text-primary transition-colors">
               {title}
             </p>
             <h3 className="text-4xl font-black tracking-tighter text-foreground">
@@ -43,7 +43,7 @@ export function MetricsCard({
           <Badge 
             variant="secondary" 
             className={cn(
-              "rounded-xl px-3 py-1 text-[10px] font-bold uppercase tracking-wider border-none",
+              "rounded-xl px-3 py-1 text-xs font-bold uppercase tracking-wider border-none",
               variant === "primary" ? "bg-primary/10 text-primary" : 
               variant === "emerald" ? "bg-emerald-500/10 text-emerald-600" : 
               "bg-muted text-muted-foreground"

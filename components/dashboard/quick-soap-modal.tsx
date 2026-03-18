@@ -87,7 +87,7 @@ export function QuickSoapModal({ isOpen, onClose }: QuickSoapModalProps) {
             </div>
             <div>
               <h2 className="text-2xl font-black tracking-tight uppercase">Quick SOAP Note</h2>
-              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mt-0.5">
+              <p className="text-xs font-black text-muted-foreground uppercase tracking-widest mt-0.5">
                 {step === 1 ? "Select a patient to proceed" : `Drafting note for ${selectedPatient?.name}`}
               </p>
             </div>
@@ -138,7 +138,7 @@ export function QuickSoapModal({ isOpen, onClose }: QuickSoapModalProps) {
                           <p className="text-xs text-muted-foreground">{patient.condition || "General Checkup"}</p>
                         </div>
                       </div>
-                      <Badge variant="secondary" className="rounded-lg font-bold text-[10px] uppercase">
+                      <Badge variant="secondary" className="rounded-lg font-bold text-xs uppercase">
                         Select
                       </Badge>
                     </button>
@@ -154,7 +154,7 @@ export function QuickSoapModal({ isOpen, onClose }: QuickSoapModalProps) {
             <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Subjective</label>
+                  <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Subjective</label>
                   <Textarea 
                     placeholder="Patient reports..." 
                     className="min-h-[120px] rounded-2xl bg-muted/30 border-none ring-1 ring-border/50 focus:ring-primary/50 resize-none"
@@ -163,7 +163,7 @@ export function QuickSoapModal({ isOpen, onClose }: QuickSoapModalProps) {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Objective</label>
+                  <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Objective</label>
                   <Textarea 
                     placeholder="Physical findings..." 
                     className="min-h-[120px] rounded-2xl bg-muted/30 border-none ring-1 ring-border/50 focus:ring-primary/50 resize-none"
@@ -172,7 +172,7 @@ export function QuickSoapModal({ isOpen, onClose }: QuickSoapModalProps) {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Assessment</label>
+                  <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Assessment</label>
                   <Textarea 
                     placeholder="Diagnosis/Status..." 
                     className="min-h-[120px] rounded-2xl bg-muted/30 border-none ring-1 ring-border/50 focus:ring-primary/50 resize-none"
@@ -181,7 +181,7 @@ export function QuickSoapModal({ isOpen, onClose }: QuickSoapModalProps) {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Plan</label>
+                  <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Plan</label>
                   <Textarea 
                     placeholder="Next steps..." 
                     className="min-h-[120px] rounded-2xl bg-muted/30 border-none ring-1 ring-border/50 focus:ring-primary/50 resize-none"

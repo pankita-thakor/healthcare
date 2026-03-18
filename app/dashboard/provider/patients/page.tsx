@@ -140,7 +140,7 @@ export default function ProviderPatientsPage() {
                             >
                               {patient.name}
                             </Link>
-                            <span className="text-[11px] text-muted-foreground font-medium uppercase tracking-tighter">ID: {patient.id.slice(0, 8)}</span>
+                            <span className="text-xs text-muted-foreground font-medium uppercase tracking-tighter">ID: {patient.id.slice(0, 8)}</span>
                           </div>
                         </div>
                       </td>
@@ -174,7 +174,7 @@ export default function ProviderPatientsPage() {
                               <Calendar className="h-3.5 w-3.5" />
                               {formatDate(patient.next_appointment)}
                             </div>
-                            <span className="text-[10px] text-primary/70 font-bold uppercase ml-5 tracking-wide">Confirmed</span>
+                            <span className="text-xs text-primary/70 font-bold uppercase ml-5 tracking-wide">Confirmed</span>
                           </div>
                         ) : (
                           <span className="text-sm text-muted-foreground italic font-medium">None scheduled</span>

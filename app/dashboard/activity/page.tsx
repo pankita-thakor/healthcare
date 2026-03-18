@@ -54,7 +54,7 @@ export default function ActivityPage() {
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4">
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
-                           <Badge variant="outline" className={cn("text-[9px] font-black uppercase tracking-widest", typeStyles[activity.type])}>
+                           <Badge variant="outline" className={cn("text-xs font-black uppercase tracking-widest", typeStyles[activity.type])}>
                               {activity.type}
                            </Badge>
                            <h3 className="text-sm font-black tracking-tight">{activity.action}</h3>
@@ -64,10 +64,10 @@ export default function ActivityPage() {
                         </p>
                       </div>
                       <div className="shrink-0 flex flex-col items-end">
-                        <p className="text-[10px] font-black text-foreground/40 uppercase tracking-tighter">
+                        <p className="text-xs font-black text-foreground/40 uppercase tracking-tighter">
                           {new Date(activity.timestamp).toLocaleDateString([], { month: "short", day: "numeric" })}
                         </p>
-                        <p className="text-[10px] font-bold text-muted-foreground/60">
+                        <p className="text-xs font-bold text-muted-foreground/60">
                           {new Date(activity.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false })}
                         </p>
                       </div>

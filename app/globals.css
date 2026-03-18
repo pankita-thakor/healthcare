@@ -48,13 +48,28 @@
 
 body {
   @apply bg-background text-foreground;
-  font-family: "Trebuchet MS", "Segoe UI", sans-serif;
 }
 
-h1,
-h2,
-h3 {
-  font-family: Georgia, "Times New Roman", serif;
+/* Base font size: 1rem = 16px; text-xs (0.75rem) = 12px minimum */
+html {
+  font-size: 16px;
+}
+
+/* Uppercase titles: font-weight 600 on all pages (overrides font-black/font-bold) */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 600 !important;
+  text-transform: uppercase;
+}
+
+/* Main landing page: keep original title styling (no uppercase) */
+.main-landing-page h1,
+.main-landing-page h2,
+.main-landing-page h3,
+.main-landing-page h4,
+.main-landing-page h5,
+.main-landing-page h6 {
+  font-weight: 800 !important;
+  text-transform: none;
 }
 
 @keyframes slide {

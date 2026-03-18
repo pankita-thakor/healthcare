@@ -238,7 +238,7 @@ export default function HomePage() {
   ];
 
   return (
-    <div ref={containerRef} className="relative min-h-screen bg-background text-foreground selection:bg-primary/20">
+    <div ref={containerRef} className="main-landing-page relative min-h-screen bg-background text-foreground selection:bg-primary/20">
       {/* Dynamic Cursor Highlight */}
       <div className="fixed inset-0 pointer-events-none z-[100] hidden lg:block opacity-20">
          <motion.div 
@@ -400,7 +400,7 @@ export default function HomePage() {
                      <CardContent className="p-4 space-y-4">
                         <div className="flex items-center justify-between">
                            <Badge variant="secondary" className="bg-blue-500/10 text-blue-500 border-none font-bold">Appointment</Badge>
-                           <span className="text-[10px] text-muted-foreground font-bold uppercase">In 45 mins</span>
+                           <span className="text-xs text-muted-foreground font-bold uppercase">In 45 mins</span>
                         </div>
                         <div className="flex items-center gap-4">
                            <div className="h-14 w-14 rounded-2xl overflow-hidden bg-muted">
@@ -408,7 +408,7 @@ export default function HomePage() {
                            </div>
                            <div>
                               <p className="font-bold">Dr. Nisha Rao</p>
-                              <p className="text-[11px] text-muted-foreground">General Physician • Video Call</p>
+                              <p className="text-xs text-muted-foreground">General Physician • Video Call</p>
                            </div>
                         </div>
                         <Button className="w-full rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold h-10">Join Consultation</Button>
@@ -418,17 +418,17 @@ export default function HomePage() {
                   <div className="space-y-3">
                      <div className="flex items-center justify-between">
                         <h4 className="text-sm font-bold">Daily Progress</h4>
-                        <span className="text-[10px] text-primary font-black uppercase">Goal 85%</span>
+                        <span className="text-xs text-primary font-black uppercase">Goal 85%</span>
                      </div>
                      <div className="grid grid-cols-2 gap-3">
                         <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-center">
                            <Activity className="h-5 w-5 text-emerald-500 mx-auto mb-2" />
-                           <p className="text-[10px] text-emerald-600 font-bold uppercase">Health Score</p>
+                           <p className="text-xs text-emerald-600 font-bold uppercase">Health Score</p>
                            <p className="text-xl font-black text-emerald-700">92</p>
                         </div>
                         <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-center">
                            <Brain className="h-5 w-5 text-amber-500 mx-auto mb-2" />
-                           <p className="text-[10px] text-amber-600 font-bold uppercase">Mindfulness</p>
+                           <p className="text-xs text-amber-600 font-bold uppercase">Mindfulness</p>
                            <p className="text-xl font-black text-amber-700">15m</p>
                         </div>
                      </div>
@@ -465,7 +465,7 @@ export default function HomePage() {
                       <CalendarCheck2 className="h-5 w-5" />
                    </div>
                    <div>
-                      <p className="text-[10px] font-black uppercase text-muted-foreground">Booking</p>
+                      <p className="text-xs font-black uppercase text-muted-foreground">Booking</p>
                       <p className="text-xs font-bold">Consultation Confirmed</p>
                    </div>
                 </div>
@@ -481,7 +481,7 @@ export default function HomePage() {
                       <Activity className="h-5 w-5" />
                    </div>
                    <div>
-                      <p className="text-[10px] font-black uppercase text-muted-foreground">Realtime</p>
+                      <p className="text-xs font-black uppercase text-muted-foreground">Realtime</p>
                       <p className="text-xs font-bold">Vitals Syncing...</p>
                    </div>
                 </div>
@@ -691,7 +691,7 @@ export default function HomePage() {
                      <div className="absolute inset-0 bg-gradient-to-t from-foreground/90 via-foreground/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500" />
                      
                      <div className="absolute bottom-0 left-0 right-0 p-8 translate-y-10 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-500 z-10">
-                        <Badge className="mb-4 bg-primary/20 text-primary border-none font-black uppercase text-[10px] tracking-widest">{doctor.tag}</Badge>
+                        <Badge className="mb-4 bg-primary/20 text-primary border-none font-black uppercase text-xs tracking-widest">{doctor.tag}</Badge>
                         <h3 className="text-3xl font-black text-background mb-2">{doctor.name}</h3>
                         <p className="text-background/60 font-bold mb-6 italic">{doctor.specialty}</p>
                         <Button className="w-full rounded-2xl bg-primary text-primary-foreground font-black h-14 shadow-xl">Book Session</Button>

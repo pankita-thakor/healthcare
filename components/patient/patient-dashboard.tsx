@@ -38,7 +38,7 @@ export function PatientDashboard() {
     <div className="space-y-8 pb-10">
       <section className="relative overflow-hidden rounded-[2.5rem] border-none bg-[#0D9488] p-8 text-white shadow-2xl md:p-12">
         <div className="relative z-10 space-y-4">
-          <Badge className="bg-white/20 text-white border-none hover:bg-white/30 rounded-full px-4 py-1 text-[10px] font-black uppercase tracking-[0.2em]">
+          <Badge className="bg-white/20 text-white border-none hover:bg-white/30 rounded-full px-4 py-1 text-xs font-black uppercase tracking-[0.2em]">
              Patient Wellness Portal
           </Badge>
           <div className="space-y-2">

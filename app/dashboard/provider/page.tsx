@@ -67,7 +67,7 @@ export default function ProviderDashboardPage() {
       <section className="relative overflow-hidden rounded-[2.5rem] bg-[#0F172A] p-8 md:p-14 text-white shadow-2xl group border-none">
         <div className="relative z-10 grid md:grid-cols-[1fr,auto] gap-8 items-center">
           <div className="space-y-6">
-            <Badge className="rounded-full border-none bg-sky-400/20 px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-sky-300 backdrop-blur-md">
+            <Badge className="rounded-full border-none bg-sky-400/20 px-4 py-1.5 text-xs font-black uppercase tracking-[0.2em] text-sky-300 backdrop-blur-md">
                Practice Intelligence v2.0
             </Badge>
             <div className="space-y-3">
@@ -78,7 +78,7 @@ export default function ProviderDashboardPage() {
                 </span>
               </h1>
               <p className="max-w-xl text-lg font-medium text-slate-400/90 leading-relaxed">
-                Your clinic is seeing high engagement today. <span className="text-white font-bold">{data.todayAppointments} patients</span> are in your queue, with a completion trend that's <span className="text-emerald-400 font-bold underline decoration-emerald-400/30 underline-offset-4">outperforming</span> last week.
+                Your clinic is seeing high engagement today. <span className="text-white font-bold">{data.todayAppointments} patients</span> are in your queue, with a completion trend that&apos;s <span className="text-emerald-400 font-bold underline decoration-emerald-400/30 underline-offset-4">outperforming</span> last week.
               </p>
             </div>
             <div className="flex flex-wrap gap-4 pt-4">
@@ -101,7 +101,7 @@ export default function ProviderDashboardPage() {
                    <ShieldCheck className="h-6 w-6 text-emerald-400" />
                 </div>
                 <div>
-                   <p className="text-[10px] font-black uppercase tracking-widest text-emerald-400">Verified Provider</p>
+                   <p className="text-xs font-black uppercase tracking-widest text-emerald-400">Verified Provider</p>
                    <p className="text-sm font-bold">Premium Tier Active</p>
                 </div>
              </div>
@@ -169,8 +169,8 @@ export default function ProviderDashboardPage() {
                 <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-2 ml-13">Practice trends & demographic mix</p>
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" className="rounded-xl font-bold text-[10px] uppercase h-9">Weekly</Button>
-                <Button variant="ghost" size="sm" className="rounded-xl font-bold text-[10px] uppercase h-9">Monthly</Button>
+                <Button variant="outline" size="sm" className="rounded-xl font-bold text-xs uppercase h-9">Weekly</Button>
+                <Button variant="ghost" size="sm" className="rounded-xl font-bold text-xs uppercase h-9">Monthly</Button>
               </div>
             </CardHeader>
             <CardContent className="p-10 pt-6">
@@ -195,7 +195,7 @@ export default function ProviderDashboardPage() {
                 </CardTitle>
                 <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-2 ml-13">Aggregated Patient Vitals Trend</p>
               </div>
-              <Badge variant="outline" className="rounded-xl border-emerald-500/20 bg-emerald-500/5 px-4 py-1.5 text-[10px] font-black text-emerald-600">LIVE SENSOR FEED</Badge>
+              <Badge variant="outline" className="rounded-xl border-emerald-500/20 bg-emerald-500/5 px-4 py-1.5 text-xs font-black text-emerald-600">LIVE SENSOR FEED</Badge>
             </CardHeader>
             <CardContent className="p-10 pt-10">
               <VitalsChart data={data.vitals} />
@@ -209,7 +209,7 @@ export default function ProviderDashboardPage() {
             <CardHeader className="p-10 pb-4 flex items-center justify-between">
               <div>
                 <CardTitle className="text-xl font-black tracking-tight uppercase">Core Conditions</CardTitle>
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Case Load Focus</p>
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Case Load Focus</p>
               </div>
               <div className="h-10 w-10 rounded-xl bg-white/50 backdrop-blur-md shadow-sm border border-border/40 flex items-center justify-center">
                  <ShieldCheck className="h-5 w-5 text-primary" />
@@ -224,12 +224,12 @@ export default function ProviderDashboardPage() {
                     </div>
                     <div>
                       <p className="text-sm font-black text-foreground/90">{condition.label}</p>
-                      <p className="text-[10px] font-bold text-muted-foreground/60 uppercase">Impact Score High</p>
+                      <p className="text-xs font-bold text-muted-foreground/60 uppercase">Impact Score High</p>
                     </div>
                   </div>
                   <div className="text-right">
                     <span className="text-2xl font-black text-primary group-hover:scale-110 block transition-transform">{condition.patients}</span>
-                    <p className="text-[9px] font-bold text-muted-foreground uppercase">Patients</p>
+                    <p className="text-xs font-bold text-muted-foreground uppercase">Patients</p>
                   </div>
                 </div>
               ))}
@@ -267,13 +267,13 @@ export default function ProviderDashboardPage() {
                 <div className="h-12 w-12 rounded-2xl bg-primary/5 flex items-center justify-center mb-3 group-hover:bg-primary group-hover:text-white transition-all">
                    <Plus className="h-6 w-6" />
                 </div>
-                <span className="text-[10px] font-black uppercase tracking-widest">New SOAP</span>
+                <span className="text-xs font-black uppercase tracking-widest">New SOAP</span>
              </button>
              <button className="flex flex-col items-center justify-center p-6 rounded-[2rem] bg-white shadow-sm border border-border/40 hover:shadow-xl hover:border-emerald-500/20 transition-all group">
                 <div className="h-12 w-12 rounded-2xl bg-emerald-500/5 flex items-center justify-center mb-3 group-hover:bg-emerald-500 group-hover:text-white transition-all">
                    <MessageSquare className="h-6 w-6" />
                 </div>
-                <span className="text-[10px] font-black uppercase tracking-widest">BroadCast</span>
+                <span className="text-xs font-black uppercase tracking-widest">BroadCast</span>
              </button>
           </div>
         </div>

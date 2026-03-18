@@ -142,7 +142,7 @@ export function Header() {
           <details className="relative group/details">
             <summary className="list-none cursor-pointer rounded-xl border border-border/60 bg-background/50 px-4 py-2 text-sm font-bold text-foreground transition-all hover:bg-muted active:scale-95">
               <div className="flex items-center gap-2">
-                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary text-[10px] font-black">
+                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-black">
                    {fullName.slice(0, 1).toUpperCase()}
                 </div>
                 <span className="hidden sm:inline">{fullName}</span>
@@ -151,7 +151,7 @@ export function Header() {
             </summary>
             <div className="absolute right-0 mt-3 w-56 origin-top-right overflow-hidden rounded-2xl border border-border/40 bg-background/95 p-1.5 shadow-2xl backdrop-blur-xl animate-in fade-in zoom-in-95 duration-200">
               <div className="px-3 py-2.5 mb-1 border-b border-border/40">
-                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">Account</p>
+                 <p className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/60">Account</p>
                  <p className="text-xs font-bold truncate">{fullName}</p>
               </div>
               <button

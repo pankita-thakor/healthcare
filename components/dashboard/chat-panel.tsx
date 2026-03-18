@@ -108,7 +108,7 @@ export function ChatPanel({ userId, peerId, peerName }: { userId: string; peerId
          <h3 className="text-sm font-bold tracking-tight">Direct Conversation</h3>
          <div className="flex items-center gap-1.5">
             <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></div>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Secure Channel</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Secure Channel</span>
          </div>
       </div>
       

@@ -203,7 +203,7 @@ export default function ConsultationPage() {
               isSoapDeleteModalVisible ? "translate-y-0 scale-100 opacity-100" : "translate-y-4 scale-95 opacity-0"
             }`}
           >
-            <p className="text-[11px] font-black uppercase tracking-[0.24em] text-destructive">Confirm Delete</p>
+            <p className="text-xs font-black uppercase tracking-[0.24em] text-destructive">Confirm Delete</p>
             <h2 className="mt-3 text-xl font-black tracking-tight">Delete SOAP note?</h2>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
               This will permanently remove the saved SOAP note from this consultation.
@@ -228,7 +228,7 @@ export default function ConsultationPage() {
       <section className="relative overflow-hidden rounded-[2rem] bg-[#0F172A] p-6 text-white shadow-2xl md:p-8">
         <div className="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div className="space-y-4">
-            <Badge className="rounded-full border-none bg-sky-400/15 px-4 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-sky-300 hover:bg-sky-400/20">
+            <Badge className="rounded-full border-none bg-sky-400/15 px-4 py-1 text-xs font-black uppercase tracking-[0.2em] text-sky-300 hover:bg-sky-400/20">
               Live Consultation
             </Badge>
             <div className="space-y-2">
@@ -240,15 +240,15 @@ export default function ConsultationPage() {
           </div>
           <div className="grid gap-3 sm:grid-cols-3">
             <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur">
-              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-sky-300">Messages</p>
+              <p className="text-xs font-black uppercase tracking-[0.22em] text-sky-300">Messages</p>
               <p className="mt-2 text-2xl font-black text-white">{messages.length}</p>
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur">
-              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-sky-300">SOAP Notes</p>
+              <p className="text-xs font-black uppercase tracking-[0.22em] text-sky-300">SOAP Notes</p>
               <p className="mt-2 text-2xl font-black text-white">{savedNotes.length}</p>
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur">
-              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-sky-300">Status</p>
+              <p className="text-xs font-black uppercase tracking-[0.22em] text-sky-300">Status</p>
               <p className="mt-2 text-sm font-black uppercase tracking-[0.18em] text-emerald-300">
                 {meetingUrl ? "Ready" : "Loading"}
               </p>
@@ -283,7 +283,7 @@ export default function ConsultationPage() {
               </CardTitle>
               <p className="text-xs font-medium text-muted-foreground">Secure call room for live provider-patient review.</p>
             </div>
-            <Badge variant="outline" className="rounded-xl border-sky-500/20 px-3 text-[10px] font-black text-sky-600 dark:text-sky-300">
+            <Badge variant="outline" className="rounded-xl border-sky-500/20 px-3 text-xs font-black text-sky-600 dark:text-sky-300">
               {meetingUrl ? "Connected" : "Preparing"}
             </Badge>
           </CardHeader>
@@ -313,7 +313,7 @@ export default function ConsultationPage() {
                 </CardTitle>
                 <p className="mt-1 text-xs font-medium text-muted-foreground">Share quick instructions, follow-up tasks, and care updates during the consultation.</p>
               </div>
-              <Badge variant="outline" className="rounded-xl border-sky-500/20 px-3 text-[10px] font-black text-sky-600 dark:text-sky-300">
+              <Badge variant="outline" className="rounded-xl border-sky-500/20 px-3 text-xs font-black text-sky-600 dark:text-sky-300">
                 Secure Channel
               </Badge>
             </div>
@@ -322,7 +322,7 @@ export default function ConsultationPage() {
             <div className="rounded-[1.5rem] border border-border/50 bg-gradient-to-b from-sky-500/[0.04] via-background to-background p-3">
               <div className="mb-3 flex items-center justify-between rounded-2xl border border-sky-500/15 bg-background/80 px-4 py-2.5 backdrop-blur">
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.22em] text-sky-600 dark:text-sky-300">Conversation Flow</p>
+                  <p className="text-xs font-black uppercase tracking-[0.22em] text-sky-600 dark:text-sky-300">Conversation Flow</p>
                   <p className="text-xs text-muted-foreground">
                     {messages.length > 0 ? "Live consultation messages" : "Sample conversation preview until messages arrive"}
                   </p>
@@ -349,13 +349,13 @@ export default function ConsultationPage() {
                       >
                         <div className="flex items-center justify-between gap-4">
                           <p
-                            className={`text-[10px] font-black uppercase tracking-[0.18em] ${
+                            className={`text-xs font-black uppercase tracking-[0.18em] ${
                               isPatient ? "text-muted-foreground" : "text-sky-700 dark:text-sky-300"
                             }`}
                           >
                             {isPatient ? "Patient" : "Doctor"}
                           </p>
-                          <p className="text-[10px] text-muted-foreground">{timeLabel}</p>
+                          <p className="text-xs text-muted-foreground">{timeLabel}</p>
                         </div>
                         <p className="mt-2 leading-6">{message.content}</p>
                       </div>
@@ -390,7 +390,7 @@ export default function ConsultationPage() {
         <CardContent className="grid items-start gap-6 p-6 pt-2 xl:grid-cols-2">
           <div className="rounded-[1.75rem] border border-border/50 bg-muted/10 p-5 xl:sticky xl:top-6 xl:self-start">
             <div className="mb-4">
-              <p className="font-black uppercase tracking-[0.18em] text-[11px] text-muted-foreground">Live SOAP note</p>
+              <p className="font-black uppercase tracking-[0.18em] text-xs text-muted-foreground">Live SOAP note</p>
               <p className="mt-1 text-xs text-muted-foreground">Document the current consultation findings here.</p>
             </div>
             <form onSubmit={onSaveSoap} className="grid gap-4 md:grid-cols-2">
@@ -422,8 +422,8 @@ export default function ConsultationPage() {
 
           <div className="rounded-[1.75rem] border border-border/50 bg-muted/10 p-5 space-y-6">
             <div className="flex items-center justify-between">
-              <p className="font-black uppercase tracking-[0.18em] text-[11px] text-muted-foreground">Saved SOAP notes</p>
-              <Badge variant="outline" className="rounded-xl border-sky-500/20 px-3 text-[10px] font-black text-sky-600 dark:text-sky-300">
+              <p className="font-black uppercase tracking-[0.18em] text-xs text-muted-foreground">Saved SOAP notes</p>
+              <Badge variant="outline" className="rounded-xl border-sky-500/20 px-3 text-xs font-black text-sky-600 dark:text-sky-300">
                 {savedNotes.length} saved
               </Badge>
             </div>
@@ -497,7 +497,7 @@ export default function ConsultationPage() {
               </p>
             </div>
             <div className="flex items-center gap-3">
-              <Badge variant="outline" className="rounded-xl border-sky-500/20 px-3 text-[10px] font-black text-sky-600 dark:text-sky-300">
+              <Badge variant="outline" className="rounded-xl border-sky-500/20 px-3 text-xs font-black text-sky-600 dark:text-sky-300">
                 {soapHistory.length} records
               </Badge>
               <ChevronDown

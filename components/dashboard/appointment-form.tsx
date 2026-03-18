@@ -180,7 +180,7 @@ export function AppointmentForm({ patientId, defaultProviderId = "" }: { patient
               </div>
               <div className="rounded-xl border bg-background px-4 py-2 text-right shadow-sm">
                 <p className="font-black text-primary">{selectedProvider.availableSlotCount} open slots</p>
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-tighter">
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-tighter">
                   {selectedProvider.nextSlot
                     ? `Next: ${new Date(selectedProvider.nextSlot.slot_start).toLocaleDateString()}`
                     : "No future slot"}

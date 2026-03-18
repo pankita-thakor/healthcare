@@ -85,11 +85,11 @@ export default function ProviderPatientProfilePage() {
               <div key={doc.id} className="group rounded-xl border bg-muted/20 p-3 hover:bg-muted/40 transition-colors cursor-pointer">
                 <div className="flex items-center justify-between mb-1">
                   <p className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">{doc.title}</p>
-                  <p className="text-[10px] font-black text-muted-foreground/60 uppercase tracking-tighter">
+                  <p className="text-xs font-black text-muted-foreground/60 uppercase tracking-tighter">
                     {new Date(doc.uploaded_at).toLocaleDateString([], { month: "short", day: "numeric" })}
                   </p>
                 </div>
-                <p className="truncate text-[10px] font-medium text-muted-foreground/60 italic">{doc.file_path}</p>
+                <p className="truncate text-xs font-medium text-muted-foreground/60 italic">{doc.file_path}</p>
               </div>
             ))}
           </CardContent>
@@ -112,7 +112,7 @@ export default function ProviderPatientProfilePage() {
                   <p className="text-sm font-black text-foreground">
                     {new Date(visit.start_time).toLocaleDateString([], { month: "long", day: "numeric" })}
                   </p>
-                  <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-primary">
+                  <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-black uppercase tracking-widest text-primary">
                     {visit.status}
                   </span>
                 </div>
@@ -153,7 +153,7 @@ export default function ProviderPatientProfilePage() {
                         Consultation Record
                       </p>
                     </div>
-                    <div className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-tighter">
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground uppercase tracking-tighter">
                       <Clock className="h-3 w-3" />
                       {new Date(note.updated_at).toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" })}
                     </div>
@@ -162,19 +162,19 @@ export default function ProviderPatientProfilePage() {
                 <CardContent className="p-6">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
-                      <p className="text-[9px] font-black uppercase tracking-[0.2em] text-primary/60">Subjective</p>
+                      <p className="text-xs font-black uppercase tracking-[0.2em] text-primary/60">Subjective</p>
                       <p className="text-xs font-medium leading-relaxed line-clamp-3 text-foreground/90">{note.subjective}</p>
                     </div>
                     <div className="space-y-1">
-                      <p className="text-[9px] font-black uppercase tracking-[0.2em] text-primary/60">Objective</p>
+                      <p className="text-xs font-black uppercase tracking-[0.2em] text-primary/60">Objective</p>
                       <p className="text-xs font-medium leading-relaxed line-clamp-3 text-foreground/90">{note.objective}</p>
                     </div>
                     <div className="space-y-1">
-                      <p className="text-[9px] font-black uppercase tracking-[0.2em] text-primary/60">Assessment</p>
+                      <p className="text-xs font-black uppercase tracking-[0.2em] text-primary/60">Assessment</p>
                       <p className="text-xs font-medium leading-relaxed line-clamp-3 text-foreground/90">{note.assessment}</p>
                     </div>
                     <div className="space-y-1">
-                      <p className="text-[9px] font-black uppercase tracking-[0.2em] text-primary/60">Plan</p>
+                      <p className="text-xs font-black uppercase tracking-[0.2em] text-primary/60">Plan</p>
                       <p className="text-xs font-medium leading-relaxed line-clamp-3 text-foreground/90">{note.plan}</p>
                     </div>
                   </div>

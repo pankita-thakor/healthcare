@@ -60,7 +60,7 @@ export function AuthShell({
               </Link>
 
               <div className="max-w-xl space-y-6">
-                <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/7 px-4 py-2 text-[11px] font-black uppercase tracking-[0.24em] text-primary">
+                <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/7 px-4 py-2 text-xs font-black uppercase tracking-[0.24em] text-primary">
                   <Stethoscope className="h-3.5 w-3.5" />
                   Care access, reimagined
                 </div>
@@ -111,12 +111,12 @@ export function AuthShell({
               </div>
               <div className="grid gap-4 sm:grid-cols-[1.15fr,0.85fr]">
                 <div className="rounded-[1.6rem] border border-white/60 bg-background/85 p-5 shadow-sm dark:border-white/10">
-                  <p className="text-[11px] font-black uppercase tracking-[0.22em] text-primary/70">Always available</p>
+                  <p className="text-xs font-black uppercase tracking-[0.22em] text-primary/70">Always available</p>
                   <p className="mt-3 text-3xl font-black tracking-tight text-foreground">24/7</p>
                   <p className="mt-2 text-sm text-muted-foreground">Access your care account anytime with secure flows built for every role.</p>
                 </div>
                 <div className="rounded-[1.6rem] border border-white/60 bg-background/85 p-5 shadow-sm dark:border-white/10">
-                  <p className="text-[11px] font-black uppercase tracking-[0.22em] text-emerald-600/80">Fast entry</p>
+                  <p className="text-xs font-black uppercase tracking-[0.22em] text-emerald-600/80">Fast entry</p>
                   <p className="mt-3 text-3xl font-black tracking-tight text-foreground">Fast</p>
                   <p className="mt-2 text-sm text-muted-foreground">Cleaner forms, clearer actions, and smoother transitions on mobile and desktop.</p>
                 </div>
@@ -147,7 +147,7 @@ export function AuthShell({
                         <HeartPulse className="h-4 w-4" />
                       </div>
                       <div className="leading-tight">
-                        <p className="text-[11px] font-black uppercase tracking-[0.24em] text-primary">{eyebrow}</p>
+                        <p className="text-xs font-black uppercase tracking-[0.24em] text-primary">{eyebrow}</p>
                         <p className="text-xs text-muted-foreground lg:hidden">Care access across every device</p>
                       </div>
                     </div>
