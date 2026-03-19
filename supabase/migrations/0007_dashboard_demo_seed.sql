@@ -1,4 +1,4 @@
-begin;
+
 
 -- Backfill basic profile fields so seeded dashboard data renders cleanly.
 update public.users
@@ -325,4 +325,4 @@ where not exists (
     and m.content = 'Thanks doctor, I will keep tracking my readings before the visit.'
 );
 
-commit;
+

@@ -1,4 +1,4 @@
-begin;
+
 
 create or replace function public.fetch_provider_availability()
 returns table (
@@ -63,4 +63,4 @@ $$;
 grant execute on function public.fetch_provider_availability() to authenticated;
 grant execute on function public.save_provider_availability(smallint, time, time) to authenticated;
 
-commit;
+

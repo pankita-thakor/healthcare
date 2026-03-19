@@ -1,4 +1,4 @@
-begin;
+
 
 -- Remove duplicate recurring slots before enforcing uniqueness.
 with ranked_slots as (
@@ -83,8 +83,9 @@ as $$
       u.full_name as provider_name,
       pc.name as category_name,
       pa.day_of_week,
-      ((day.day_date::timestamp + pa.start_time) at time zone 'UTC') as slot_start,
-      ((day.day_date::timestamp + pa.end_time) at time zone 'UTC') as slot_end
+      -- Combine date and time, then cast to timestamptz (uses server/session timezone)
+      (day.day_date + pa.start_time)::timestamptz as slot_start,
+      (day.day_date + pa.end_time)::timestamptz as slot_end
     from public.provider_availability pa
     join upcoming_days day
       on extract(dow from day.day_date)::smallint = pa.day_of_week
@@ -95,7 +96,7 @@ as $$
     left join public.provider_categories pc
       on pc.id = p.category_id
     where pa.is_active = true
-      and ((day.day_date::timestamp + pa.start_time) at time zone 'UTC') >= now()
+      and (day.day_date + pa.start_time)::timestamptz >= now()
   )
   select
     so.slot_id,
@@ -140,8 +141,9 @@ begin
     where pa.provider_id = p_provider_id
       and pa.is_active = true
       and pa.day_of_week = extract(dow from p_slot_start)::smallint
-      and pa.start_time = (p_slot_start at time zone 'UTC')::time
-      and pa.end_time = (p_slot_end at time zone 'UTC')::time
+      -- Compare the time portion regardless of timezone offset
+      and pa.start_time = p_slot_start::time
+      and pa.end_time = p_slot_end::time
   ) then
     raise exception 'Selected slot is not available';
   end if;
@@ -184,4 +186,4 @@ grant execute on function public.save_provider_availability(smallint, time, time
 grant execute on function public.fetch_bookable_provider_slots(integer) to authenticated;
 grant execute on function public.book_provider_slot(uuid, timestamptz, timestamptz, text) to authenticated;
 
-commit;
+

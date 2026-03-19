@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { updatePassword } from "@/services/auth/service";
 
 export function ChangePasswordForm() {
+  const [oldPassword, setOldPassword] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [saving, setSaving] = useState(false);
@@ -18,19 +19,20 @@ export function ChangePasswordForm() {
     setStatus("");
 
     if (password.length < 8) {
-      setError("Password must be at least 8 characters.");
+      setError("New password must be at least 8 characters.");
       return;
     }
 
     if (password !== confirmPassword) {
-      setError("Passwords do not match.");
+      setError("New passwords do not match.");
       return;
     }
 
     setSaving(true);
     try {
-      await updatePassword(password);
+      await updatePassword(password, oldPassword);
       setStatus("Password updated successfully.");
+      setOldPassword("");
       setPassword("");
       setConfirmPassword("");
     } catch (err) {
@@ -42,6 +44,14 @@ export function ChangePasswordForm() {
 
   return (
     <form id="security" onSubmit={onSubmit} className="grid gap-4 md:grid-cols-2">
+      <Input
+        type="password"
+        placeholder="Current password"
+        value={oldPassword}
+        onChange={(e) => setOldPassword(e.target.value)}
+        className="md:col-span-2"
+        required
+      />
       <Input
         type="password"
         placeholder="New password"

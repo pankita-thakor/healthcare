@@ -70,7 +70,22 @@ export function ChatPanel({ userId, peerId, peerName }: { userId: string; peerId
 
     const channel = subscribeToMessages(userId, peerId, (payload) => {
       if (isLocalChatMessage(payload.new)) {
-        setMessages((prev) => [...prev, payload.new]);
+        const m = payload.new;
+        const isRelevant =
+          (m.sender_id === userId && m.recipient_id === peerId) ||
+          (m.sender_id === peerId && m.recipient_id === userId);
+        if (isRelevant) {
+          setMessages((prev) => {
+            const recent = prev.filter(
+              (x) =>
+                x.content === m.content &&
+                x.sender_id === m.sender_id &&
+                (Date.now() - new Date(x.created_at ?? 0).getTime()) < 5000
+            );
+            if (recent.length > 0) return prev;
+            return [...prev, m];
+          });
+        }
       }
     });
 
@@ -84,8 +99,7 @@ export function ChatPanel({ userId, peerId, peerName }: { userId: string; peerId
     if (!value.trim()) return;
     try {
       await sendMessage({ senderId: userId, recipientId: peerId, content: value });
-      
-      // Optimistic update for demo/local flow
+
       const nextMsg: LocalChatMessage = {
         id: `local-${Date.now()}`,
         content: value,
@@ -93,8 +107,7 @@ export function ChatPanel({ userId, peerId, peerName }: { userId: string; peerId
         recipient_id: peerId,
         created_at: new Date().toISOString()
       };
-      setMessages(prev => [...prev, nextMsg]);
-      
+      setMessages((prev) => [...prev, nextMsg]);
       showNotification(`Message sent to ${peerName || "recipient"}.`);
       setValue("");
     } catch (err) {

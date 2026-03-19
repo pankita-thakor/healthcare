@@ -41,6 +41,22 @@ export default function ProviderPatientProfilePage() {
                <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Age</span>
                <span className="text-sm font-black">{profile.age ?? "N/A"} years</span>
             </div>
+            <div className="flex items-center justify-between py-2 border-b border-border/40">
+               <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Phone</span>
+               <span className="text-sm font-black">{profile.phone ?? "N/A"}</span>
+            </div>
+            <div className="flex items-center justify-between py-2 border-b border-border/40">
+               <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Gender</span>
+               <span className="text-sm font-black">{profile.gender ?? "N/A"}</span>
+            </div>
+            <div className="flex items-center justify-between py-2 border-b border-border/40">
+               <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Blood Group</span>
+               <span className="text-sm font-black text-red-500">{profile.bloodGroup ?? "N/A"}</span>
+            </div>
+            <div className="space-y-1.5 py-2 border-b border-border/40">
+               <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Insurance</p>
+               <p className="text-sm font-black leading-relaxed">{profile.insurance ?? "None provided"}</p>
+            </div>
             <div className="space-y-1.5">
                <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Current Condition</p>
                <p className="text-sm font-medium leading-relaxed">{profile.summary}</p>

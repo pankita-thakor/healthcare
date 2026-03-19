@@ -1,4 +1,4 @@
-﻿begin;
+
 
 alter table public.notifications
   add column if not exists type text default 'info',
@@ -18,4 +18,4 @@ create policy "notifications owner update" on public.notifications
 for update using (user_id = auth.uid() or public.current_user_role() = 'admin')
 with check (user_id = auth.uid() or public.current_user_role() = 'admin');
 
-commit;
+

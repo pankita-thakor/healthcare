@@ -1,14 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Bell, HeartPulse } from "lucide-react";
+import Link from "next/link";
+import { Bell, HeartPulse, MessageSquare } from "lucide-react";
 import { createBrowserClient } from "@/lib/supabase";
 import { logout } from "@/services/auth/service";
 import { getClientRole, getClientUserId } from "@/lib/client-auth";
 import { getDemoSessionByUserId } from "@/lib/demo-session";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
+import {
+  fetchNotifications,
+  markAllNotificationsRead,
+  markNotificationRead,
+  subscribeToNotifications,
+  type NotificationRecord
+} from "@/services/notifications/service";
 
 type Role = "patient" | "provider" | "admin";
 
@@ -36,11 +44,23 @@ export function Header() {
   const [role, setRole] = useState<Role | null>(() => getClientRole());
   const [unreadCount, setUnreadCount] = useState(0);
   const [fullName, setFullName] = useState("User");
+  const [notifications, setNotifications] = useState<NotificationRecord[]>([]);
+
+  const refreshNotifications = useCallback(async () => {
+    const userId = getClientUserId();
+    if (!userId) return;
+    const demoSession = getDemoSessionByUserId(userId);
+    if (demoSession) return;
+    const list = await fetchNotifications(userId);
+    setNotifications(list);
+    setUnreadCount(list.filter((n) => !n.read).length);
+  }, []);
 
   useEffect(() => {
     const supabase = createBrowserClient();
     const userId = getClientUserId();
     let cancelled = false;
+    let sub: { unsubscribe: () => void } = { unsubscribe: () => {} };
 
     async function load() {
       try {
@@ -69,15 +89,20 @@ export function Header() {
           setFullName(profile.full_name);
         }
 
-        const { data: notifications } = await supabase
-          .from("notifications")
-          .select("id, read")
-          .eq("user_id", userId)
-          .eq("read", false);
-
+        const list = await fetchNotifications(userId);
         if (!cancelled) {
-          setUnreadCount(notifications?.length ?? 0);
+          setNotifications(list);
+          setUnreadCount(list.filter((n) => !n.read).length);
         }
+
+        sub = subscribeToNotifications(userId, () => {
+          if (!cancelled) void fetchNotifications(userId).then((list) => {
+            if (!cancelled) {
+              setNotifications(list);
+              setUnreadCount(list.filter((n) => !n.read).length);
+            }
+          });
+        });
       } catch (err) {
         if (err instanceof DOMException) return;
       }
@@ -87,6 +112,7 @@ export function Header() {
 
     return () => {
       cancelled = true;
+      sub.unsubscribe();
     };
   }, []);
 
@@ -123,17 +149,85 @@ export function Header() {
         </button>
 
         <div className="flex items-center gap-3">
-          <button
-            type="button"
-            className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-border/60 bg-background/50 text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
-            aria-label="Notifications"
-            title="Notifications"
-          >
-            <Bell className="h-4 w-4" />
-            {unreadCount > 0 && (
-              <span className="absolute right-2 top-2 flex h-2 w-2 rounded-full bg-destructive shadow-[0_0_0_2px_white] dark:shadow-[0_0_0_2px_black]" />
-            )}
-          </button>
+          <details className="relative group/notif">
+            <summary className="list-none cursor-pointer">
+              <button
+                type="button"
+                className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-border/60 bg-background/50 text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
+                aria-label="Notifications"
+                title="Notifications"
+              >
+                <Bell className="h-4 w-4" />
+                {unreadCount > 0 && (
+                  <span className="absolute right-2 top-2 flex h-2 w-2 rounded-full bg-destructive shadow-[0_0_0_2px_white] dark:shadow-[0_0_0_2px_black]" />
+                )}
+              </button>
+            </summary>
+            <div className="absolute right-0 mt-2 w-80 max-h-[min(24rem,70vh)] overflow-hidden rounded-2xl border border-border bg-card shadow-2xl backdrop-blur-xl animate-in fade-in zoom-in-95 duration-200 z-50">
+              <div className="p-3 border-b border-border flex items-center justify-between">
+                <p className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground">Notifications</p>
+                {unreadCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const uid = getClientUserId();
+                      if (uid) await markAllNotificationsRead(uid);
+                      setUnreadCount(0);
+                      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+                    }}
+                    className="text-xs font-bold text-primary hover:underline"
+                  >
+                    Mark all read
+                  </button>
+                )}
+              </div>
+              <div className="overflow-y-auto max-h-[min(20rem,60vh)]">
+                {notifications.length === 0 ? (
+                  <div className="p-6 text-center text-sm text-muted-foreground">No notifications yet.</div>
+                ) : (
+                  notifications.map((n) => (
+                    <Link
+                      key={n.id}
+                      href="/dashboard/activity"
+                      onClick={async () => {
+                        if (!n.read) {
+                          await markNotificationRead(n.id);
+                          setUnreadCount((c) => Math.max(0, c - 1));
+                          setNotifications((prev) =>
+                            prev.map((x) => (x.id === n.id ? { ...x, read: true } : x))
+                          );
+                        }
+                      }}
+                      className={`flex gap-3 p-3 border-b border-border/40 last:border-0 transition-colors hover:bg-muted/50 ${
+                        !n.read ? "bg-primary/5" : ""
+                      }`}
+                    >
+                      <div className="shrink-0 h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center">
+                        <MessageSquare className="h-4 w-4 text-primary" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-bold text-foreground truncate">{n.title}</p>
+                        <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">
+                          {n.body}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground/70 mt-1">
+                          {new Date(n.created_at).toLocaleString([], {
+                            month: "short",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit"
+                          })}
+                        </p>
+                      </div>
+                      {!n.read && (
+                        <span className="shrink-0 h-2 w-2 rounded-full bg-primary mt-2" />
+                      )}
+                    </Link>
+                  ))
+                )}
+              </div>
+            </div>
+          </details>
 
           <div className="h-6 w-px bg-border/60 mx-1 hidden sm:block" />
 

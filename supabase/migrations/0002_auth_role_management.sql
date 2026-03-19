@@ -1,6 +1,5 @@
-﻿begin;
 
--- Status enums
+
 create type public.account_status as enum ('active', 'pending_approval', 'rejected');
 
 -- Users table additions
@@ -163,4 +162,4 @@ for select using (
   )
 );
 
-commit;
+

@@ -67,13 +67,13 @@ export default function ProviderPatientsPage() {
           <div className="flex items-center justify-between">
             <CardTitle className="text-xl font-semibold flex items-center gap-2">
               <User className="h-5 w-5 text-primary" />
-              Assigned Patients
+              Registered Patients
             </CardTitle>
             <Badge variant="secondary" className="font-medium px-3 py-1 rounded-lg">
               {filteredPatients.length} Patients
             </Badge>
           </div>
-          <CardDescription className="text-sm">Real-time status of patients under your care.</CardDescription>
+          <CardDescription className="text-sm">All registered patients in the system.</CardDescription>
         </CardHeader>
         <CardContent className="p-0">
           {loading && (
@@ -99,7 +99,7 @@ export default function ProviderPatientsPage() {
               <p className="text-sm text-muted-foreground max-w-xs mx-auto">
                 {searchQuery 
                   ? `We couldn't find any results matching "${searchQuery}". Try a different term.` 
-                  : "You don't have any patients assigned to you at the moment."}
+                  : "No registered patients in the system yet."}
               </p>
               {searchQuery && (
                 <Button variant="outline" onClick={() => setSearchQuery("")} className="mt-2 rounded-xl">

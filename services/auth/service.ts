@@ -274,7 +274,22 @@ export async function completeRecoverySession() {
   }
 }
 
-export async function updatePassword(newPassword: string) {
+export async function updatePassword(newPassword: string, oldPassword?: string) {
+  // If oldPassword is provided, verify it first by re-authenticating
+  if (oldPassword) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user || !user.email) throw new Error("Not authenticated");
+
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: user.email,
+      password: oldPassword,
+    });
+
+    if (signInError) {
+      throw new Error("Invalid current password. Please try again.");
+    }
+  }
+
   const { error } = await supabase.auth.updateUser({ password: newPassword });
   if (error) throw error;
 }

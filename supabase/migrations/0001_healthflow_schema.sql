@@ -1,5 +1,3 @@
-﻿create extension if not exists "pgcrypto";
-
 create type public.user_role as enum ('patient', 'provider', 'admin');
 create type public.appointment_status as enum ('pending', 'confirmed', 'completed', 'cancelled');
 create type public.payment_status as enum ('initiated', 'paid', 'failed', 'refunded');
@@ -252,3 +250,5 @@ for insert with check (patient_id = auth.uid() or public.current_user_role() = '
 
 create policy "payments admin update" on public.payments
 for update using (public.current_user_role() = 'admin');
+
+

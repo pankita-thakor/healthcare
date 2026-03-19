@@ -1,4 +1,4 @@
-﻿begin;
+
 
 -- Provider category catalog
 create table if not exists public.provider_categories (
@@ -210,4 +210,4 @@ create policy "provider availability self write" on public.provider_availability
 for all using (provider_id = auth.uid() or public.current_user_role() = 'admin')
 with check (provider_id = auth.uid() or public.current_user_role() = 'admin');
 
-commit;
+

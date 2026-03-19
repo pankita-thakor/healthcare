@@ -1,4 +1,4 @@
-begin;
+
 
 create or replace function public.complete_patient_onboarding(
   p_date_of_birth date,
@@ -85,4 +85,4 @@ $$;
 grant execute on function public.complete_patient_onboarding(date, text, text, text) to authenticated;
 grant execute on function public.complete_provider_onboarding(uuid, text, text, jsonb) to authenticated;
 
-commit;
+
