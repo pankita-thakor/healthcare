@@ -141,13 +141,13 @@ export function AppointmentForm({ patientId, defaultProviderId = "" }: { patient
         return key ? DISPLAY_FALLBACKS[key] : null;
       })();
     if (fallback) {
-      const useStr = (v: string | null | undefined) => (v && String(v).trim()) || null;
+      const trimOrNull = (v: string | null | undefined) => (v && String(v).trim()) || null;
       return {
         ...base,
-        category_description: useStr(base.category_description) ?? fallback.category_description,
-        hospital: useStr(base.hospital) ?? fallback.hospital,
+        category_description: trimOrNull(base.category_description) ?? fallback.category_description,
+        hospital: trimOrNull(base.hospital) ?? fallback.hospital,
         experience: base.experience != null && base.experience > 0 ? base.experience : fallback.experience,
-        bio: useStr(base.bio) ?? fallback.bio
+        bio: trimOrNull(base.bio) ?? fallback.bio
       };
     }
     return base;

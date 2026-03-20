@@ -4,14 +4,9 @@ import { useEffect, useState } from "react";
 import { ArrowLeft, ChevronDown, FileText, MessageSquareText, Pencil, Trash2, Video } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import {
-  deleteSoapNote,
   ensureConsultationRoom,
-  fetchSoapNotes,
-  fetchPatientSoapNotes,
   getAppointmentById,
-  getOrCreateConversation,
-  saveSoapNote,
-  type SoapNoteRecord
+  getOrCreateConversation
 } from "@/services/provider/dashboard";
 import { useProviderConversation } from "@/hooks/use-provider-conversation";
 import { Badge } from "@/components/ui/badge";
@@ -37,6 +32,22 @@ const PREVIEW_MESSAGES = [
   }
 ] as const;
 
+type SoapNoteRecord = {
+  id: string;
+  appointment_id: string;
+  subjective: string;
+  objective: string;
+  assessment: string;
+  plan: string;
+  updated_at: string;
+};
+
+async function fetchSoapNotes(_appointmentId: string): Promise<SoapNoteRecord[]> {
+  return [];
+}
+async function fetchPatientSoapNotes(_patientId: string): Promise<SoapNoteRecord[]> {
+  return [];
+}
 
 export default function ConsultationPage() {
   const params = useParams<{ appointmentId: string }>();
@@ -129,58 +140,13 @@ export default function ConsultationPage() {
     }
   }
 
-  async function onSaveSoap(e: React.FormEvent) {
+  function onSaveSoap(e: React.FormEvent) {
     e.preventDefault();
-    setError("");
-
-    try {
-      const note = await saveSoapNote({
-        noteId: editingNoteId ?? undefined,
-        appointmentId,
-        patientId,
-        subjective: soap.subjective,
-        objective: soap.objective,
-        assessment: soap.assessment,
-        plan: soap.plan
-      });
-
-      setSavedNotes((prev) => {
-        const remaining = prev.filter((item) => item.id !== note.id);
-        return [note, ...remaining].sort((a, b) => b.updated_at.localeCompare(a.updated_at));
-      });
-      setSoap({ subjective: "", objective: "", assessment: "", plan: "" });
-      setEditingNoteId(null);
-      setStatus(editingNoteId ? "SOAP note updated." : "SOAP note saved.");
-    } catch (err) {
-      setError((err as Error).message);
-    }
+    // SOAP save disabled
   }
 
-  async function onDeleteSoap(noteId: string) {
-    setError("");
-    try {
-      await deleteSoapNote(noteId);
-      setSavedNotes((prev) => prev.filter((note) => note.id !== noteId));
-      if (editingNoteId === noteId) {
-        setEditingNoteId(null);
-        setSoap({ subjective: "", objective: "", assessment: "", plan: "" });
-      }
-      setStatus("SOAP note deleted.");
-      closeSoapDeleteModal();
-    } catch (err) {
-      setError((err as Error).message);
-    }
-  }
-
-  function onEditSoap(note: SoapNoteRecord) {
-    setEditingNoteId(note.id);
-    setSoap({
-      subjective: note.subjective,
-      objective: note.objective,
-      assessment: note.assessment,
-      plan: note.plan
-    });
-    setStatus("Editing saved SOAP note.");
+  function onEditSoap(_note: SoapNoteRecord) {
+    // SOAP edit disabled
   }
 
   function closeSoapDeleteModal() {
@@ -216,7 +182,7 @@ export default function ConsultationPage() {
                 type="button"
                 variant="destructive"
                 className="rounded-xl"
-                onClick={() => void onDeleteSoap(pendingDeleteNote.id)}
+                onClick={closeSoapDeleteModal}
               >
                 Yes, delete
               </Button>
@@ -369,10 +335,12 @@ export default function ConsultationPage() {
                 value={chatValue}
                 onChange={(e) => setChatValue(e.target.value)}
                 placeholder="Type message"
-                className="rounded-xl border-sky-500/20 focus-visible:ring-sky-500/20"
+                disabled
+                readOnly
+                className="rounded-xl border-sky-500/20 focus-visible:ring-sky-500/20 opacity-70"
               />
-              <Button type="submit" disabled={sending} className="rounded-xl bg-sky-600 px-5 font-black text-white shadow-lg shadow-sky-500/20 hover:bg-sky-700">
-                {sending ? "Sending..." : "Send"}
+              <Button type="submit" disabled className="rounded-xl bg-sky-600 px-5 font-black text-white shadow-lg shadow-sky-500/20 hover:bg-sky-700 opacity-70">
+                Send
               </Button>
             </form>
           </CardContent>

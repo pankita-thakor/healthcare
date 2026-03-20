@@ -1,11 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import {
-  getConversationMessages,
-  sendConversationMessage,
-  subscribeConversation
-} from "@/services/provider/dashboard";
+import { useState } from "react";
 
 interface ConversationMessage {
   id: string;
@@ -15,35 +10,12 @@ interface ConversationMessage {
   created_at: string;
 }
 
-export function useProviderConversation(conversationId: string) {
-  const [messages, setMessages] = useState<ConversationMessage[]>([]);
+/** Chat logic removed – UI only. Returns empty messages and no-op send. */
+export function useProviderConversation(_conversationId: string) {
+  const [messages] = useState<ConversationMessage[]>([]);
 
-  useEffect(() => {
-    async function run() {
-      const initial = await getConversationMessages(conversationId);
-      setMessages(initial as ConversationMessage[]);
-    }
-
-    if (!conversationId) return;
-    void run();
-
-    const channel = subscribeConversation(conversationId, (payload) => {
-      setMessages((prev) => [...prev, payload.new as ConversationMessage]);
-    });
-
-    return () => {
-      channel.unsubscribe();
-    };
-  }, [conversationId]);
-
-  async function send(recipientId: string, content: string) {
-    const nextMessage = await sendConversationMessage({ conversationId, recipientId, content });
-    if (!nextMessage) return;
-
-    setMessages((prev) => {
-      if (prev.some((message) => message.id === nextMessage.id)) return prev;
-      return [...prev, nextMessage as ConversationMessage];
-    });
+  async function send(_recipientId: string, _content: string) {
+    // no-op
   }
 
   return { messages, send };

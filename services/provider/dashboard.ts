@@ -603,3 +603,81 @@ export async function fetchProviderPatientProfile(patientId: string): Promise<Pr
     }))
   };
 }
+
+// Provider categories
+export async function fetchProviderCategories(): Promise<{ id: string; name: string; description: string | null }[]> {
+  const { data, error } = await supabase.from('provider_categories').select('id, name, description').order('name');
+  if (error) throw error;
+  return data ?? [];
+}
+
+// Provider profile
+export async function fetchProviderProfileDetails(userId: string) {
+  const { data, error } = await supabase
+    .from('providers')
+    .select('*, provider_categories(name)')
+    .eq('user_id', userId)
+    .single();
+  if (error && error.code !== 'PGRST116') throw error;
+  return data;
+}
+
+export async function saveProviderProfileDetails(userId: string, payload: Record<string, unknown>) {
+  const { error } = await supabase.from('providers').upsert(
+    { user_id: userId, ...payload, updated_at: new Date().toISOString() },
+    { onConflict: 'user_id' }
+  );
+  if (error) throw error;
+}
+
+// Appointment by id
+export async function getAppointmentById(appointmentId: string) {
+  const { data, error } = await supabase
+    .from('appointments')
+    .select('*, patients(*), providers(*, provider_categories(name))')
+    .eq('id', appointmentId)
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+// Consultation room (stub – no Daily integration)
+export async function ensureConsultationRoom(_appointmentId: string): Promise<{ meetingUrl: string }> {
+  return { meetingUrl: '' };
+}
+
+// Conversation (stub – chat logic removed, UI only)
+export async function getOrCreateConversation(
+  _patientId: string,
+  _appointmentId: string
+): Promise<string> {
+  return '';
+}
+
+export async function getConversationMessages(_conversationId: string) {
+  return [];
+}
+
+export async function sendConversationMessage(_params: {
+  conversationId: string;
+  recipientId: string;
+  content: string;
+}): Promise<unknown> {
+  return null;
+}
+
+export function subscribeConversation(_conversationId: string, _cb: (msg: unknown) => void) {
+  return { unsubscribe: () => {} };
+}
+
+// SOAP notes (stub – save disabled, UI only)
+export async function saveSoapNote(_payload: {
+  appointmentId: string;
+  patientId: string;
+  subjective: string;
+  objective: string;
+  assessment: string;
+  plan: string;
+}): Promise<void> {
+  // no-op
+}

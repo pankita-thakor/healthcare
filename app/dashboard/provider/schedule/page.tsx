@@ -358,8 +358,8 @@ export default function ProviderSchedulePage() {
                 Yes, delete
               </Button>
             </div>
-          </div>
-        </div>
+      </div>
+              </div>
       )}
 
       {/* Reschedule Modal */}
@@ -447,8 +447,8 @@ export default function ProviderSchedulePage() {
           </span>
           <span className="rounded-full bg-background px-4 py-2 text-xs font-bold uppercase tracking-wider text-foreground shadow-sm">
             Active {activeSlotsCount} slots
-          </span>
-        </div>
+                      </span>
+                    </div>
       </div>
 
       {/* Top Row: Add Availability + Active Slots */}
@@ -487,7 +487,7 @@ export default function ProviderSchedulePage() {
                   onChange={(e) => setFormStartTime(e.target.value)}
                   className="h-11 rounded-xl"
                 />
-              </div>
+                  </div>
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   End Time
@@ -533,7 +533,7 @@ export default function ProviderSchedulePage() {
                         <Input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} className="h-9 rounded-lg" />
                         <Input type="time" value={editStartTime} onChange={(e) => setEditStartTime(e.target.value)} className="h-9 rounded-lg" />
                         <Input type="time" value={editEndTime} onChange={(e) => setEditEndTime(e.target.value)} className="h-9 rounded-lg" />
-                      </div>
+                </div>
                       <div className="flex gap-2">
                         <Button size="sm" className="h-8 rounded-lg" onClick={handleUpdateSlot} disabled={isLoading}>Save</Button>
                         <Button variant="outline" size="sm" className="h-8 rounded-lg" onClick={cancelEditSlot}>Cancel</Button>
@@ -599,7 +599,7 @@ export default function ProviderSchedulePage() {
                     </div>
                   );
                 })() )}
-              </div>
+                        </div>
             ) : (
               <p className="text-sm text-muted-foreground">No slots configured. Add one above.</p>
             )}
@@ -639,7 +639,7 @@ export default function ProviderSchedulePage() {
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
-          </div>
+                          </div>
         </CardHeader>
         <CardContent className="p-6 pt-2">
           <div className="grid grid-cols-7 gap-3 min-w-[700px] overflow-x-auto">
@@ -655,15 +655,15 @@ export default function ProviderSchedulePage() {
                     <p className="text-sm font-semibold text-foreground">{format(day, "MMM d")}</p>
                     <div className="mt-1 inline-flex h-6 w-6 items-center justify-center rounded-full bg-muted text-xs font-bold">
                       {displayItems.length}
-                    </div>
-                  </div>
+                          </div>
+                        </div>
                   <div className="space-y-2 flex-1">
                     {!hasItems ? (
                       <div className="rounded-xl border border-dashed border-border bg-muted/20 py-8 px-2 flex items-center justify-center min-h-[120px]">
                         <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                           Quiet Day
-                        </p>
-                      </div>
+                              </p>
+                            </div>
                     ) : (
                       <>
                         {displayItems.map((item) =>
@@ -672,9 +672,9 @@ export default function ProviderSchedulePage() {
                               <div className="flex items-center justify-between gap-1">
                                 <span className="text-xs font-bold text-primary">
                                   {item.slot.start_time.slice(0, 5)}–{item.slot.end_time.slice(0, 5)}
-                                </span>
+                            </span>
                                 <span className="text-[10px] text-muted-foreground">Available</span>
-                              </div>
+                          </div>
                             </div>
                           ) : (
                             <div
@@ -739,7 +739,7 @@ export default function ProviderSchedulePage() {
                                         disabled={completingId === item.apt.id}
                                       >
                                         <Check className="h-3 w-3" /> {completingId === item.apt.id ? "..." : "Complete"}
-                                      </Button>
+                              </Button>
                                     )}
                                     {getDisplayStatus(item.apt) !== "running" && (
                                       <Button
@@ -749,7 +749,7 @@ export default function ProviderSchedulePage() {
                                         onClick={() => openReschedule(item.apt)}
                                       >
                                         Reschedule
-                                      </Button>
+                              </Button>
                                     )}
                                   </>
                                 )}
@@ -768,9 +768,9 @@ export default function ProviderSchedulePage() {
                 </div>
               );
             })}
-          </div>
-        </CardContent>
-      </Card>
+              </div>
+          </CardContent>
+        </Card>
     </div>
   );
 }

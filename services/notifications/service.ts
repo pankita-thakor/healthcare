@@ -90,3 +90,12 @@ export function subscribeToNotifications(
     }
   };
 }
+
+export async function notifyAppointment(
+  _email?: string,
+  _phone?: string,
+  _pushToken?: string,
+  _message?: string
+): Promise<void> {
+  // Stub – push/email integration not implemented
+}

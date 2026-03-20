@@ -1,118 +1,18 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
-import { subscribeToMessages, sendMessage } from "@/services/messages/service";
+import { useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { showNotification } from "@/components/layout/GlobalNotification";
 import { cn } from "@/lib/utils";
 
-interface LocalChatMessage {
-  id: string;
-  content: string;
-  sender_id: string;
-  recipient_id: string;
-  created_at?: string;
-}
-
-function isLocalChatMessage(value: unknown): value is LocalChatMessage {
-  if (!value || typeof value !== "object") return false;
-
-  const message = value as Record<string, unknown>;
-
-  return (
-    typeof message.id === "string" &&
-    typeof message.content === "string" &&
-    typeof message.sender_id === "string" &&
-    typeof message.recipient_id === "string" &&
-    (message.created_at === undefined || typeof message.created_at === "string")
-  );
-}
-
-export function ChatPanel({ userId, peerId, peerName }: { userId: string; peerId: string; peerName?: string }) {
-  const [messages, setMessages] = useState<LocalChatMessage[]>([]);
-  const [value, setValue] = useState("");
+/** Chat logic removed – UI only. Empty messages, disabled input. */
+export function ChatPanel({ userId }: { userId: string; peerId: string; peerName?: string }) {
+  const messages: { id: string; content: string; sender_id: string; recipient_id: string }[] = [];
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [messages]);
-
-  useEffect(() => {
-    // Initial load for demo messages from local storage
-    if (typeof localStorage !== "undefined") {
-      const raw = localStorage.getItem("hf_demo_messages");
-      if (raw) {
-        try {
-          const parsed: unknown = JSON.parse(raw);
-          const allDemo = Array.isArray(parsed) ? parsed.filter(isLocalChatMessage) : [];
-          const relevant = allDemo
-            .filter((m) =>
-              (m.sender_id === userId && m.recipient_id === peerId) ||
-              (m.sender_id === peerId && m.recipient_id === userId)
-            )
-            .map((m) => ({
-              id: m.id,
-              content: m.content,
-              sender_id: m.sender_id,
-              recipient_id: m.recipient_id,
-              created_at: m.created_at
-            }));
-
-          setMessages(relevant);
-        } catch (e) {
-          console.error("Failed to parse demo messages", e);
-        }
-      }
-    }
-
-    const channel = subscribeToMessages(userId, peerId, (payload) => {
-      if (isLocalChatMessage(payload.new)) {
-        const m = payload.new;
-        const isRelevant =
-          (m.sender_id === userId && m.recipient_id === peerId) ||
-          (m.sender_id === peerId && m.recipient_id === userId);
-        if (isRelevant) {
-          setMessages((prev) => {
-            const recent = prev.filter(
-              (x) =>
-                x.content === m.content &&
-                x.sender_id === m.sender_id &&
-                (Date.now() - new Date(x.created_at ?? 0).getTime()) < 5000
-            );
-            if (recent.length > 0) return prev;
-            return [...prev, m];
-          });
-        }
-      }
-    });
-
-    return () => {
-      channel.unsubscribe();
-    };
-  }, [peerId, userId]);
-
-  async function onSend(e: FormEvent<HTMLFormElement>) {
+  function onSend(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!value.trim()) return;
-    try {
-      await sendMessage({ senderId: userId, recipientId: peerId, content: value });
-
-      const nextMsg: LocalChatMessage = {
-        id: `local-${Date.now()}`,
-        content: value,
-        sender_id: userId,
-        recipient_id: peerId,
-        created_at: new Date().toISOString()
-      };
-      setMessages((prev) => [...prev, nextMsg]);
-      showNotification(`Message sent to ${peerName || "recipient"}.`);
-      setValue("");
-    } catch (err) {
-      showNotification("Failed to send message.", "error");
-    }
+    // no-op – chat disabled
   }
 
   return (
@@ -152,12 +52,13 @@ export function ChatPanel({ userId, peerId, peerName }: { userId: string; peerId
       <div className="p-4 border-t bg-muted/10">
         <form onSubmit={onSend} className="flex gap-2">
           <Input 
-            value={value} 
-            onChange={(e) => setValue(e.target.value)} 
+            value="" 
+            readOnly 
+            disabled 
             placeholder="Write your message..." 
             className="rounded-xl bg-background border-none h-11 focus-visible:ring-1 focus-visible:ring-primary/30"
           />
-          <Button type="submit" className="rounded-xl px-5 h-11 font-bold shadow-lg shadow-primary/20">
+          <Button type="submit" disabled className="rounded-xl px-5 h-11 font-bold shadow-lg shadow-primary/20">
             Send
           </Button>
         </form>
