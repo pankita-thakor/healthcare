@@ -1,11 +1,15 @@
 "use client";
 
+import { useState } from "react";
+import Link from "next/link";
 import { AppointmentForm } from "@/components/dashboard/appointment-form";
 import { ChatPanel } from "@/components/dashboard/chat-panel";
 import { MetricsCard } from "@/components/dashboard/metrics-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { usePatientDashboard } from "@/hooks/use-patient-dashboard";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { CalendarCheck, Video, ChevronDown, ChevronUp, FileText } from "lucide-react";
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -21,8 +25,15 @@ function getPatientGreetingName(name: string) {
   return trimmed;
 }
 
+function formatDoctorName(name: string | null): string {
+  if (!name?.trim()) return "Provider";
+  const n = name.trim();
+  return /^dr\.?\s/i.test(n) ? n : `Dr. ${n}`;
+}
+
 export function PatientDashboard() {
   const { data, loading, error } = usePatientDashboard();
+  const [expandedConsultationId, setExpandedConsultationId] = useState<string | null>(null);
 
   if (loading) return (
     <div className="flex items-center justify-center h-64">
@@ -56,9 +67,62 @@ export function PatientDashboard() {
         <div className="absolute -bottom-20 right-40 h-64 w-64 rounded-full bg-white/5 blur-[80px]"></div>
       </section>
 
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      {/* Running consultation - live banner */}
+      {data.runningConsultation && (
+        <div className="rounded-[2rem] border-2 border-sky-500/50 bg-sky-500/10 dark:bg-sky-500/20 shadow-lg overflow-hidden flex animate-pulse">
+          <div className="w-1.5 sm:w-2 flex-shrink-0 bg-sky-500" aria-hidden />
+          <div className="flex-1 p-6 sm:p-8 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="h-12 w-12 flex-shrink-0 rounded-full bg-sky-500/20 flex items-center justify-center">
+                <span className="h-3 w-3 rounded-full bg-sky-500 animate-pulse" />
+              </div>
+              <div>
+                <h3 className="text-xs font-black uppercase tracking-[0.24em] text-sky-600 dark:text-sky-400 mb-1">Consultation in progress</h3>
+                <p className="text-base font-bold text-foreground">
+                  Your consultation with {formatDoctorName(data.runningConsultation.providerName)} is running now.
+                </p>
+              </div>
+            </div>
+            <Button asChild size="lg" className="rounded-xl font-bold shrink-0">
+              <Link href={`/consultation/${data.runningConsultation.id}`} className="flex items-center gap-2">
+                <Video className="h-4 w-4" /> Enter Call
+              </Link>
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Next Visit - important detail highlighted at top */}
+      <div className="rounded-[2rem] border border-teal-500/30 bg-background dark:bg-card shadow-lg overflow-hidden flex animate-blink-soft">
+        <div className="w-1.5 sm:w-2 flex-shrink-0 bg-teal-500" aria-hidden />
+        <div className="flex-1 p-6 sm:p-8 flex items-start gap-4">
+          <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-teal-500/10 text-teal-600 dark:text-teal-400">
+            <CalendarCheck className="h-6 w-6" />
+          </div>
+          <div className="min-w-0">
+            <h3 className="text-xs font-black uppercase tracking-[0.24em] text-teal-600 dark:text-teal-400 mb-1">Next Visit</h3>
+            <p className="text-base sm:text-lg font-bold text-foreground">
+              {data.nextAppointment ? (
+                <>
+                  <span>{new Date(data.nextAppointment).toLocaleString([], { dateStyle: "short", timeStyle: "short", hour12: false })}</span>
+                  <span className="text-muted-foreground font-medium"> with </span>
+                  <span className="bg-gradient-to-r from-teal-600 via-emerald-600 to-teal-700 dark:from-teal-400 dark:via-emerald-400 dark:to-teal-500 bg-clip-text text-transparent font-black text-lg sm:text-xl tracking-tight drop-shadow-sm">
+                    {formatDoctorName(data.peerProviderName)}
+                  </span>
+                  <span>.</span>
+                </>
+              ) : (
+                "No visits scheduled. Book a slot above to get started."
+              )}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         <MetricsCard title="Appointments" value={String(data.upcomingAppointments)} change="Upcoming" variant="primary" />
-        <MetricsCard title="Clinical Messages" value={String(data.unreadMessages)} change="New Notifications" variant="emerald" />
+        <MetricsCard title="Completed" value={String(data.completedConsultations)} change="Consultations" variant="emerald" />
+        <MetricsCard title="Clinical Messages" value={String(data.unreadMessages)} change="New Notifications" variant="primary" />
         <MetricsCard title="Active Prescriptions" value={String(data.prescriptions)} change="In Review" variant="primary" />
       </div>
 
@@ -74,6 +138,84 @@ export function PatientDashboard() {
             </CardContent>
           </Card>
 
+          {data.pastConsultations.length > 0 && (
+            <Card className="rounded-[2rem] border-border/40 shadow-sm overflow-hidden bg-background/50 backdrop-blur-sm">
+              <CardHeader className="p-8 pb-4">
+                <CardTitle className="text-2xl font-black tracking-tight uppercase flex items-center gap-2">
+                  <FileText className="h-6 w-6 text-primary" />
+                  Older Consultations
+                </CardTitle>
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-1">
+                  {data.pastConsultations.length} completed consultation{data.pastConsultations.length !== 1 ? "s" : ""}
+                </p>
+              </CardHeader>
+              <CardContent className="p-8 pt-0 space-y-3">
+                {data.pastConsultations.map((c) => {
+                  const isExpanded = expandedConsultationId === c.id;
+                  const hasDetails = c.soapNote && (c.soapNote.subjective || c.soapNote.objective || c.soapNote.assessment || c.soapNote.plan);
+                  return (
+                    <div
+                      key={c.id}
+                      className="rounded-xl border border-border/60 bg-card/80 p-4 space-y-2"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-bold text-foreground">
+                            {new Date(c.startTime).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            with {formatDoctorName(c.providerName)}
+                          </p>
+                          {c.reason && (
+                            <p className="text-xs text-muted-foreground/80 mt-1 italic">&quot;{c.reason}&quot;</p>
+                          )}
+                        </div>
+                        {hasDetails && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 shrink-0"
+                            onClick={() => setExpandedConsultationId(isExpanded ? null : c.id)}
+                          >
+                            {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                          </Button>
+                        )}
+                      </div>
+                      {isExpanded && c.soapNote && (
+                        <div className="mt-3 pt-3 border-t border-border/40 space-y-2 text-sm">
+                          {c.soapNote.subjective && (
+                            <div>
+                              <p className="text-xs font-bold uppercase text-muted-foreground mb-0.5">Subjective</p>
+                              <p className="text-foreground/90">{c.soapNote.subjective}</p>
+                            </div>
+                          )}
+                          {c.soapNote.objective && (
+                            <div>
+                              <p className="text-xs font-bold uppercase text-muted-foreground mb-0.5">Objective</p>
+                              <p className="text-foreground/90">{c.soapNote.objective}</p>
+                            </div>
+                          )}
+                          {c.soapNote.assessment && (
+                            <div>
+                              <p className="text-xs font-bold uppercase text-muted-foreground mb-0.5">Assessment</p>
+                              <p className="text-foreground/90">{c.soapNote.assessment}</p>
+                            </div>
+                          )}
+                          {c.soapNote.plan && (
+                            <div>
+                              <p className="text-xs font-bold uppercase text-muted-foreground mb-0.5">Plan</p>
+                              <p className="text-foreground/90">{c.soapNote.plan}</p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </CardContent>
+            </Card>
+          )}
+
           <div className="grid gap-6 md:grid-cols-2">
             <Card className="rounded-[2rem] border-border/40 shadow-sm bg-background p-8 group hover:border-primary/30 transition-all">
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/5 text-primary transition-transform">
@@ -87,16 +229,16 @@ export function PatientDashboard() {
               </p>
             </Card>
 
-            <Card className="rounded-[2rem] border-border/40 shadow-sm bg-[#F8FAFC] dark:bg-slate-900 p-8 border-l-8 border-l-primary/40">
-              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-white dark:bg-slate-800 shadow-sm">
-                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-primary"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="m9 16 2 2 4-4"/></svg>
+            <Card className="rounded-[2rem] border-border/40 shadow-sm bg-background p-8 group hover:border-primary/30 transition-all">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 transition-transform">
+                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
               </div>
-              <h3 className="text-xl font-black uppercase tracking-tight mb-2">Next Visit</h3>
-              <div className="text-sm font-medium text-muted-foreground leading-relaxed">
-                {data.nextAppointment
-                  ? <span className="font-bold text-foreground">{new Date(data.nextAppointment).toLocaleString([], { dateStyle: "short", timeStyle: "short", hour12: false })} with {data.peerProviderName ?? "your provider"}.</span>
-                  : "No visits scheduled currently. Use the form above to find an available slot."}
-              </div>
+              <h3 className="text-xl font-black uppercase tracking-tight mb-2">Your Care Team</h3>
+              <p className="text-sm font-medium text-muted-foreground leading-relaxed">
+                {data.peerProviderName
+                  ? `Connected with ${formatDoctorName(data.peerProviderName)}. Book follow-ups or chat via the panel.`
+                  : "Book your first appointment above to connect with a provider and start your care journey."}
+              </p>
             </Card>
           </div>
         </div>

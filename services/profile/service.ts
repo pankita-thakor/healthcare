@@ -1,4 +1,5 @@
 import { createBrowserClient } from "@/lib/supabase";
+import { safeGetUser } from "@/lib/supabase-auth";
 import type { UserRole } from "@/types";
 
 export interface AccountProfile {
@@ -18,9 +19,7 @@ export interface AccountProfile {
 
 export async function fetchCurrentAccountProfile(): Promise<AccountProfile> {
   const supabase = createBrowserClient();
-  const {
-    data: { user }
-  } = await supabase.auth.getUser();
+  const { user } = await safeGetUser();
 
   if (!user) throw new Error("Not authenticated");
 

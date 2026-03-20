@@ -1,7 +1,8 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import { createBrowserClient } from "@/lib/supabase";
+import { safeGetUser } from "@/lib/supabase-auth";
 
 const supabase = createBrowserClient();
 
@@ -17,9 +18,7 @@ export function useAuthProfile() {
 
   useEffect(() => {
     async function run() {
-      const {
-        data: { user }
-      } = await supabase.auth.getUser();
+      const { user } = await safeGetUser();
 
       if (!user) {
         setProfile(null);

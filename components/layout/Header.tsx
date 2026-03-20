@@ -45,6 +45,7 @@ export function Header() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [fullName, setFullName] = useState("User");
   const [notifications, setNotifications] = useState<NotificationRecord[]>([]);
+  const [notifOpen, setNotifOpen] = useState(false);
 
   const refreshNotifications = useCallback(async () => {
     const userId = getClientUserId();
@@ -149,21 +150,32 @@ export function Header() {
         </button>
 
         <div className="flex items-center gap-3">
-          <details className="relative group/notif">
-            <summary className="list-none cursor-pointer">
-              <button
-                type="button"
-                className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-border/60 bg-background/50 text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
-                aria-label="Notifications"
-                title="Notifications"
-              >
-                <Bell className="h-4 w-4" />
-                {unreadCount > 0 && (
-                  <span className="absolute right-2 top-2 flex h-2 w-2 rounded-full bg-destructive shadow-[0_0_0_2px_white] dark:shadow-[0_0_0_2px_black]" />
-                )}
-              </button>
-            </summary>
-            <div className="absolute right-0 mt-2 w-80 max-h-[min(24rem,70vh)] overflow-hidden rounded-2xl border border-border bg-card shadow-2xl backdrop-blur-xl animate-in fade-in zoom-in-95 duration-200 z-50">
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => {
+                const next = !notifOpen;
+                setNotifOpen(next);
+                if (next) void refreshNotifications();
+              }}
+              className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-border/60 bg-background/50 text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
+              aria-label="Notifications"
+              title="Notifications"
+              aria-expanded={notifOpen}
+            >
+              <Bell className="h-4 w-4" />
+              {unreadCount > 0 && (
+                <span className="absolute right-2 top-2 flex h-2 w-2 rounded-full bg-destructive shadow-[0_0_0_2px_white] dark:shadow-[0_0_0_2px_black]" />
+              )}
+            </button>
+            {notifOpen && (
+              <>
+                <div
+                  className="fixed inset-0 z-40"
+                  aria-hidden
+                  onClick={() => setNotifOpen(false)}
+                />
+                <div className="absolute right-0 mt-2 w-80 max-h-[min(24rem,70vh)] overflow-hidden rounded-2xl border border-border bg-card shadow-2xl backdrop-blur-xl z-50 animate-in fade-in zoom-in-95 duration-200">
               <div className="p-3 border-b border-border flex items-center justify-between">
                 <p className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground">Notifications</p>
                 {unreadCount > 0 && (
@@ -189,9 +201,10 @@ export function Header() {
                     <Link
                       key={n.id}
                       href="/dashboard/activity"
-                      onClick={async () => {
+                      onClick={() => {
+                        setNotifOpen(false);
                         if (!n.read) {
-                          await markNotificationRead(n.id);
+                          markNotificationRead(n.id);
                           setUnreadCount((c) => Math.max(0, c - 1));
                           setNotifications((prev) =>
                             prev.map((x) => (x.id === n.id ? { ...x, read: true } : x))
@@ -227,7 +240,9 @@ export function Header() {
                 )}
               </div>
             </div>
-          </details>
+              </>
+            )}
+          </div>
 
           <div className="h-6 w-px bg-border/60 mx-1 hidden sm:block" />
 

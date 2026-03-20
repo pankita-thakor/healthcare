@@ -9,10 +9,14 @@ function toReadableError(err: unknown) {
     );
   }
 
-  if (err instanceof Error) {
-    return err;
+  const msg = err instanceof Error ? err.message : String(err ?? "");
+  if (/not authenticated|session expired|invalid.*token/i.test(msg)) {
+    return new Error(
+      "Your session has expired or you're using a demo account. Please confirm your email (if required) and sign in with your real account to save your details."
+    );
   }
 
+  if (err instanceof Error) return err;
   return new Error("Unexpected onboarding error. Please try again.");
 }
 
@@ -33,13 +37,23 @@ export async function completePatientOnboarding(input: {
   gender: string;
   insurance: string;
   medicalHistory: string;
+  phone?: string;
+  bloodGroup?: string;
+  conditionSummary?: string;
+  allergies?: string;
+  emergencyContact?: string;
 }) {
   try {
     const { error } = await supabase.rpc("complete_patient_onboarding", {
       p_date_of_birth: input.dob,
       p_gender: input.gender,
       p_insurance: input.insurance,
-      p_medical_history: input.medicalHistory
+      p_medical_history: input.medicalHistory,
+      p_phone: input.phone ?? null,
+      p_blood_group: input.bloodGroup ?? null,
+      p_condition_summary: input.conditionSummary ?? null,
+      p_allergies: input.allergies ?? null,
+      p_emergency_contact: input.emergencyContact ?? null
     });
 
     if (error) throw error;

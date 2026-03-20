@@ -3,6 +3,20 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { FileText, Clock } from "lucide-react";
+
+function getConsultationDisplayStatus(
+  status: string,
+  startTime: string,
+  endTime: string
+): "running" | "completed" | "pending" | "confirmed" {
+  if (status === "completed") return "completed";
+  const now = new Date();
+  const start = new Date(startTime);
+  const end = new Date(endTime);
+  if (now > end && ["pending", "confirmed"].includes(status)) return "completed";
+  if (now >= start && now <= end && ["pending", "confirmed"].includes(status)) return "running";
+  return status as "pending" | "confirmed";
+}
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { VitalsChart } from "@/components/provider/vitals-chart";
@@ -122,21 +136,47 @@ export default function ProviderPatientProfilePage() {
                  <p className="text-xs font-bold uppercase tracking-widest">No consultations</p>
               </div>
             )}
-            {profile.consultations.map((visit) => (
-              <div key={visit.id} className="rounded-xl border bg-background p-3 shadow-sm border-l-4 border-l-primary/40">
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-sm font-black text-foreground">
-                    {new Date(visit.start_time).toLocaleDateString([], { month: "long", day: "numeric" })}
+            {profile.consultations.map((visit) => {
+              const displayStatus = getConsultationDisplayStatus(
+                visit.status,
+                visit.start_time,
+                visit.end_time ?? visit.start_time
+              );
+              return (
+                <div
+                  key={visit.id}
+                  className={`rounded-xl border p-3 shadow-sm border-l-4 ${
+                    displayStatus === "completed"
+                      ? "border-muted-foreground/20 bg-muted/30 opacity-30 border-l-muted-foreground/30"
+                      : "border-l-primary/40 bg-background"
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <p
+                      className={`text-sm font-black ${
+                        displayStatus === "completed" ? "text-muted-foreground" : "text-foreground"
+                      }`}
+                    >
+                      {new Date(visit.start_time).toLocaleDateString([], { month: "long", day: "numeric" })}
+                    </p>
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-xs font-black uppercase tracking-widest ${
+                        displayStatus === "completed"
+                          ? "bg-muted text-muted-foreground"
+                          : displayStatus === "running"
+                            ? "bg-sky-500/10 text-sky-600 dark:text-sky-400"
+                            : "bg-primary/10 text-primary"
+                      }`}
+                    >
+                      {displayStatus}
+                    </span>
+                  </div>
+                  <p className="text-xs font-medium text-muted-foreground leading-relaxed italic">
+                    &quot;{visit.reason ?? "No clinical reason provided."}&quot;
                   </p>
-                  <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-black uppercase tracking-widest text-primary">
-                    {visit.status}
-                  </span>
                 </div>
-                <p className="text-xs font-medium text-muted-foreground leading-relaxed italic">
-                  &quot;{visit.reason ?? "No clinical reason provided."}&quot;
-                </p>
-              </div>
-            ))}
+              );
+            })}
           </CardContent>
         </Card>
       </div>

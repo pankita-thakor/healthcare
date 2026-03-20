@@ -1,4 +1,5 @@
-﻿import { createBrowserClient } from "@/lib/supabase";
+import { createBrowserClient } from "@/lib/supabase";
+import { safeGetUser } from "@/lib/supabase-auth";
 
 const supabase = createBrowserClient();
 
@@ -43,9 +44,7 @@ export async function fetchPendingProviders(): Promise<PendingProvider[]> {
 }
 
 export async function reviewProvider(userId: string, decision: "active" | "rejected") {
-  const {
-    data: { user }
-  } = await supabase.auth.getUser();
+  const { user } = await safeGetUser();
 
   if (!user) throw new Error("Not authenticated");
 

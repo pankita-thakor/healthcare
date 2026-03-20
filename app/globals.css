@@ -86,3 +86,18 @@ h1, h2, h3, h4, h5, h6 {
     transform: translateX(-50%);
   }
 }
+
+@keyframes blink-soft {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 hsl(var(--primary) / 0.2);
+  }
+  50% {
+    opacity: 0.95;
+    box-shadow: 0 0 20px 4px hsl(var(--primary) / 0.15);
+  }
+}
+
+.animate-blink-soft {
+  animation: blink-soft 2s ease-in-out infinite;
+}

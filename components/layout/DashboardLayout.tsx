@@ -16,6 +16,7 @@ import {
   HeartPulse
 } from "lucide-react";
 import { createBrowserClient } from "@/lib/supabase";
+import { safeGetUser } from "@/lib/supabase-auth";
 import { getClientRole } from "@/lib/client-auth";
 import { cn } from "@/lib/utils";
 import { Header } from "@/components/layout/Header";
@@ -68,9 +69,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
     async function loadRole() {
       try {
-        const {
-          data: { user }
-        } = await supabase.auth.getUser();
+        const { user } = await safeGetUser();
 
         if (!user || cancelled) return;
 

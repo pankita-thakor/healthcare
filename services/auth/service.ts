@@ -7,6 +7,7 @@ import {
   rememberLocalAuthAccount,
   writeDemoSession
 } from "@/lib/demo-session";
+import { safeGetUser } from "@/lib/supabase-auth";
 import type { UserRole } from "@/types";
 
 const supabase = createBrowserClient();
@@ -102,9 +103,12 @@ async function resolveEffectiveRole(
       status = userProfile.status;
     }
 
-    if (hasProviderProfile(providerProfile) || (fallbackRole === "provider" && providerProfile?.user_id)) {
+    // Prefer users.role when explicitly set (avoids wrong role when user has both patients + providers rows)
+    if (userProfile?.role === "patient") {
+      role = "patient";
+    } else if (userProfile?.role === "provider" || hasProviderProfile(providerProfile) || (fallbackRole === "provider" && providerProfile?.user_id)) {
       role = "provider";
-    } else if (patientProfile?.user_id || userProfile?.role === "patient") {
+    } else if (patientProfile?.user_id) {
       role = "patient";
     } else if (userProfile?.role) {
       role = userProfile.role;
@@ -219,7 +223,7 @@ export async function login(email: string, password: string): Promise<{ id: stri
 export async function getPostLoginPath(userId: string, role: UserRole): Promise<string> {
   if (role === "admin") return "/dashboard/admin";
   if (isDemoUserId(userId)) {
-    return role === "provider" ? "/dashboard/provider" : "/dashboard/patient";
+    return role === "provider" ? "/dashboard/provider" : "/onboarding/patient";
   }
 
   if (role === "patient") {
@@ -228,7 +232,7 @@ export async function getPostLoginPath(userId: string, role: UserRole): Promise<
         .from("patients")
         .select("onboarding_completed")
         .eq("user_id", userId)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
 
@@ -237,6 +241,7 @@ export async function getPostLoginPath(userId: string, role: UserRole): Promise<
       if (!isHtmlResponseError(error)) {
         throw toReadableAuthError(error, "Unable to determine the next page after login.");
       }
+      return "/onboarding/patient";
     }
 
     return "/dashboard/patient";
@@ -277,7 +282,7 @@ export async function completeRecoverySession() {
 export async function updatePassword(newPassword: string, oldPassword?: string) {
   // If oldPassword is provided, verify it first by re-authenticating
   if (oldPassword) {
-    const { data: { user } } = await supabase.auth.getUser();
+    const { user } = await safeGetUser();
     if (!user || !user.email) throw new Error("Not authenticated");
 
     const { error: signInError } = await supabase.auth.signInWithPassword({

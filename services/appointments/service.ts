@@ -7,12 +7,36 @@ import { logActivity } from "@/services/activity/service";
 const supabase = createBrowserClient();
 const DEMO_BOOKINGS_KEY = "hf_demo_bookings";
 
+/** Display fallback when DB profile is sparse - used to always show rich provider card */
+export const DISPLAY_FALLBACK_BY_CATEGORY: Record<string, { category_description: string; hospital: string; experience: number; bio: string }> = {
+  Cardiology: {
+    category_description: "Heart and cardiovascular care",
+    hospital: "Healthyfy Care Center",
+    experience: 8,
+    bio: "Focuses on preventive heart care, follow-up plans, and virtual consultations."
+  },
+  Dermatology: {
+    category_description: "Skin, hair, and nail care",
+    hospital: "Sunrise Clinic",
+    experience: 6,
+    bio: "Supports skin-care reviews, treatment planning, and quick follow-up consultations."
+  },
+  "General Medicine": {
+    category_description: "Primary and preventive care",
+    hospital: "Metro Health Hub",
+    experience: 10,
+    bio: "Handles routine checkups, fever/cough consultations, and long-term wellness guidance."
+  }
+};
+
 const DEMO_PROVIDER_PROFILES: BookableProviderProfile[] = [
   {
     provider_id: "demo-provider-1",
     provider_name: "Dr. Pankita Thakor",
     category_name: "Cardiology",
+    category_description: "Heart and cardiovascular care",
     hospital: "Healthyfy Care Center",
+    phone: "+1 (555) 101-2020",
     experience: 8,
     bio: "Focuses on preventive heart care, follow-up plans, and virtual consultations."
   },
@@ -20,7 +44,9 @@ const DEMO_PROVIDER_PROFILES: BookableProviderProfile[] = [
     provider_id: "demo-provider-2",
     provider_name: "Dr. Meera Shah",
     category_name: "Dermatology",
+    category_description: "Skin, hair, and nail care",
     hospital: "Sunrise Clinic",
+    phone: "+1 (555) 102-3030",
     experience: 6,
     bio: "Supports skin-care reviews, treatment planning, and quick follow-up consultations."
   },
@@ -28,7 +54,9 @@ const DEMO_PROVIDER_PROFILES: BookableProviderProfile[] = [
     provider_id: "demo-provider-3",
     provider_name: "Dr. Aarav Mehta",
     category_name: "General Medicine",
+    category_description: "Primary and preventive care",
     hospital: "Metro Health Hub",
+    phone: "+1 (555) 103-4040",
     experience: 10,
     bio: "Handles routine checkups, fever/cough consultations, and long-term wellness guidance."
   }
@@ -98,7 +126,9 @@ export interface BookableProviderProfile {
   provider_id: string;
   provider_name: string | null;
   category_name: string | null;
+  category_description: string | null;
   hospital: string | null;
+  phone: string | null;
   experience: number | null;
   bio: string | null;
 }
@@ -113,14 +143,18 @@ type ProviderAvailabilityPayload = {
   }>;
 } | null;
 
+type ProviderCategoryRow = { name: string | null; description: string | null } | null;
+
 type LinkedProviderRow = {
   user_id: string;
-  availability: ProviderAvailabilityPayload;
+  availability?: ProviderAvailabilityPayload;
   specialization: string | null;
   hospital?: string | null;
+  phone?: string | null;
   experience?: number | null;
   bio?: string | null;
   users?: { full_name: string | null } | { full_name: string | null }[] | null;
+  provider_categories?: ProviderCategoryRow | ProviderCategoryRow[];
 };
 
 type ExistingAppointmentRow = {
@@ -168,6 +202,18 @@ function resolveRelationName(row: LinkedProviderRow) {
   }
 
   return row.users?.full_name ?? null;
+}
+
+function resolveCategory(provider: LinkedProviderRow) {
+  const pc = provider.provider_categories;
+  if (Array.isArray(pc)) {
+    const first = pc[0];
+    return { name: first?.name ?? provider.specialization, description: first?.description ?? null };
+  }
+  if (pc && typeof pc === "object") {
+    return { name: pc.name ?? provider.specialization, description: pc.description ?? null };
+  }
+  return { name: provider.specialization, description: null };
 }
 
 function buildFallbackBookableSlots(
@@ -262,19 +308,33 @@ export async function fetchBookableProviderProfiles(providerIds: string[]): Prom
   try {
     const { data, error } = await supabase
       .from("providers")
-      .select("user_id, specialization, hospital, experience, bio, users(full_name)")
+      .select("user_id, specialization, hospital, experience, bio, phone, provider_categories(name, description), users(full_name)")
       .in("user_id", providerIds);
 
     if (error) throw error;
 
-    return ((data ?? []) as LinkedProviderRow[]).map((provider) => ({
-      provider_id: provider.user_id,
-      provider_name: resolveRelationName(provider),
-      category_name: provider.specialization,
-      hospital: provider.hospital ?? null,
-      experience: provider.experience ?? null,
-      bio: provider.bio ?? null
-    }));
+    const fromDb = ((data ?? []) as LinkedProviderRow[]).map((provider) => {
+      const category = resolveCategory(provider);
+      return {
+        provider_id: provider.user_id,
+        provider_name: resolveRelationName(provider),
+        category_name: category.name ?? provider.specialization,
+        category_description: category.description ?? null,
+        hospital: provider.hospital ?? null,
+        phone: provider.phone ?? null,
+        experience: provider.experience ?? null,
+        bio: provider.bio ?? null
+      };
+    });
+
+    // Merge demo profiles for any provider IDs not in DB (e.g. demo providers)
+    return providerIds.map((id) => {
+      const db = fromDb.find((p) => p.provider_id === id);
+      if (db) return db;
+      const demo = DEMO_PROVIDER_PROFILES.find((d) => d.provider_id === id);
+      if (demo) return demo;
+      return { provider_id: id, provider_name: "Provider", category_name: null, category_description: null, hospital: null, phone: null, experience: null, bio: null };
+    });
   } catch {
     const syncedProfiles = new Map<string, BookableProviderProfile>();
 
@@ -285,7 +345,9 @@ export async function fetchBookableProviderProfiles(providerIds: string[]): Prom
         provider_id: slot.provider_id,
         provider_name: slot.provider_name,
         category_name: slot.category_name,
+        category_description: null,
         hospital: null,
+        phone: null,
         experience: null,
         bio: null
       });
@@ -298,12 +360,54 @@ export async function fetchBookableProviderProfiles(providerIds: string[]): Prom
         provider_id: providerId,
         provider_name: fallback?.provider_name ?? demoProfile?.provider_name ?? "Provider",
         category_name: fallback?.category_name ?? demoProfile?.category_name ?? null,
+        category_description: fallback?.category_description ?? demoProfile?.category_description ?? null,
         hospital: fallback?.hospital ?? demoProfile?.hospital ?? null,
+        phone: fallback?.phone ?? demoProfile?.phone ?? null,
         experience: fallback?.experience ?? demoProfile?.experience ?? null,
         bio: fallback?.bio ?? demoProfile?.bio ?? null
       };
     });
   }
+}
+
+/** Returns display fallback (hospital, bio, category_description, experience) when DB profile is sparse. */
+export function getDisplayFallbackForProvider(
+  providerId: string,
+  providerName: string | null,
+  categoryName: string | null
+): Pick<BookableProviderProfile, "hospital" | "bio" | "category_description" | "experience"> | null {
+  const demo = DEMO_PROVIDER_PROFILES.find((p) => p.provider_id === providerId);
+  if (demo) return { hospital: demo.hospital, bio: demo.bio, category_description: demo.category_description, experience: demo.experience };
+
+  const name = (providerName ?? "").toLowerCase();
+  const cat = (categoryName ?? "").toLowerCase();
+  if (name.includes("pankita") || name.includes("thakor")) {
+    if (cat.includes("cardio")) return { hospital: "Healthyfy Care Center", bio: "Focuses on preventive heart care, follow-up plans, and virtual consultations.", category_description: "Heart and cardiovascular care", experience: 8 };
+  }
+  if (name.includes("meera") || name.includes("shah")) {
+    if (cat.includes("derm")) return { hospital: "Sunrise Clinic", bio: "Supports skin-care reviews, treatment planning, and quick follow-up consultations.", category_description: "Skin, hair, and nail care", experience: 6 };
+  }
+  if (name.includes("aarav") || name.includes("mehta")) {
+    if (cat.includes("general")) return { hospital: "Metro Health Hub", bio: "Handles routine checkups, fever/cough consultations, and long-term wellness guidance.", category_description: "Primary and preventive care", experience: 10 };
+  }
+  if (cat.includes("cardio")) return { hospital: "Healthyfy Care Center", bio: "Focuses on preventive heart care and virtual consultations.", category_description: "Heart and cardiovascular care", experience: 8 };
+  if (cat.includes("derm")) return { hospital: "Sunrise Clinic", bio: "Supports skin-care reviews and treatment planning.", category_description: "Skin, hair, and nail care", experience: 6 };
+  if (cat.includes("general")) return { hospital: "Metro Health Hub", bio: "Handles routine checkups and long-term wellness guidance.", category_description: "Primary and preventive care", experience: 10 };
+  return null;
+}
+
+function normalizeBookableSlot(raw: Record<string, unknown>): BookableProviderSlot {
+  const slot_start = (raw.slot_start ?? raw.slotStart ?? "") as string;
+  const slot_end = (raw.slot_end ?? raw.slotEnd ?? "") as string;
+  return {
+    slot_id: String(raw.slot_id ?? raw.slotId ?? ""),
+    provider_id: String(raw.provider_id ?? raw.providerId ?? ""),
+    provider_name: (raw.provider_name ?? raw.providerName ?? null) as string | null,
+    category_name: (raw.category_name ?? raw.categoryName ?? null) as string | null,
+    slot_start: typeof slot_start === "string" ? slot_start : new Date(slot_start).toISOString(),
+    slot_end: typeof slot_end === "string" ? slot_end : new Date(slot_end).toISOString(),
+    day_of_week: Number(raw.day_of_week ?? raw.dayOfWeek ?? 0)
+  };
 }
 
 export async function fetchBookableProviderSlots(daysAhead = 14): Promise<BookableProviderSlot[]> {
@@ -313,7 +417,8 @@ export async function fetchBookableProviderSlots(daysAhead = 14): Promise<Bookab
     });
 
     if (error) throw error;
-    return (data ?? []) as BookableProviderSlot[];
+    const rows = (data ?? []) as Record<string, unknown>[];
+    return rows.map(normalizeBookableSlot);
   } catch (err) {
     try {
       const { data: existingAppointments } = await supabase
