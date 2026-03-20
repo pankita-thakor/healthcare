@@ -6,8 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useProviderCategories } from "@/hooks/use-provider-categories";
 import {
-  fetchProviderProfileDetails,
-  saveProviderProfileDetails,
+  fetchCurrentProviderProfileDetails,
+  saveCurrentProviderProfileDetails,
   type ProviderProfileDetails
 } from "@/services/provider/dashboard";
 
@@ -32,7 +32,7 @@ export function ProviderProfileForm({ onSaved }: { onSaved?: () => void | Promis
   useEffect(() => {
     async function run() {
       try {
-        const data = await fetchProviderProfileDetails();
+        const data = await fetchCurrentProviderProfileDetails();
         setForm(data);
       } catch (err) {
         setError((err as Error).message);
@@ -50,7 +50,7 @@ export function ProviderProfileForm({ onSaved }: { onSaved?: () => void | Promis
     setStatus("");
     setSaving(true);
     try {
-      await saveProviderProfileDetails(form);
+      await saveCurrentProviderProfileDetails(form);
       setStatus("Profile saved successfully.");
       await onSaved?.();
     } catch (err) {

@@ -612,6 +612,17 @@ export async function fetchProviderCategories(): Promise<{ id: string; name: str
 }
 
 // Provider profile
+export interface ProviderProfileDetails {
+  name: string;
+  phone: string;
+  licenseNumber: string;
+  categoryId: string;
+  experience: string;
+  hospital: string;
+  bio: string;
+  availability: string;
+}
+
 export async function fetchProviderProfileDetails(userId: string) {
   const { data, error } = await supabase
     .from('providers')
@@ -628,6 +639,45 @@ export async function saveProviderProfileDetails(userId: string, payload: Record
     { onConflict: 'user_id' }
   );
   if (error) throw error;
+}
+
+/** Fetches current provider profile as ProviderProfileDetails (for form). */
+export async function fetchCurrentProviderProfileDetails(): Promise<ProviderProfileDetails> {
+  const userId = await getCurrentUserId();
+  const [{ data: userData }, { data: providerData }] = await Promise.all([
+    supabase.from('users').select('full_name, phone').eq('id', userId).maybeSingle(),
+    supabase.from('providers').select('phone, license_number, category_id, experience, hospital, bio').eq('user_id', userId).maybeSingle()
+  ]);
+  return {
+    name: userData?.full_name ?? '',
+    phone: providerData?.phone ?? userData?.phone ?? '',
+    licenseNumber: providerData?.license_number ?? '',
+    categoryId: providerData?.category_id ?? '',
+    experience: providerData?.experience != null ? String(providerData.experience) : '',
+    hospital: providerData?.hospital ?? '',
+    bio: providerData?.bio ?? '',
+    availability: ''
+  };
+}
+
+/** Saves current provider profile from form payload. */
+export async function saveCurrentProviderProfileDetails(payload: ProviderProfileDetails): Promise<void> {
+  const userId = await getCurrentUserId();
+  const { error } = await supabase.from('providers').upsert(
+    {
+      user_id: userId,
+      phone: payload.phone,
+      license_number: payload.licenseNumber,
+      category_id: payload.categoryId || null,
+      experience: payload.experience ? parseInt(payload.experience, 10) : null,
+      hospital: payload.hospital,
+      bio: payload.bio,
+      updated_at: new Date().toISOString()
+    },
+    { onConflict: 'user_id' }
+  );
+  if (error) throw error;
+  await supabase.from('users').update({ full_name: payload.name, phone: payload.phone, updated_at: new Date().toISOString() }).eq('id', userId);
 }
 
 // Appointment by id
