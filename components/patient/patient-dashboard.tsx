@@ -26,9 +26,9 @@ function getPatientGreetingName(name: string) {
 }
 
 function formatDoctorName(name: string | null): string {
-  if (!name?.trim()) return "Provider";
-  const n = name.trim();
-  return /^dr\.?\s/i.test(n) ? n : `Dr. ${n}`;
+  if (!name?.trim()) return "";
+  const n = name.trim().replace(/^dr\.?\s*/i, "");
+  return n || "";
 }
 
 export function PatientDashboard() {
@@ -44,6 +44,9 @@ export function PatientDashboard() {
   );
   
   if (error || !data) return <p className="text-sm text-destructive">{error ?? "Failed to load dashboard."}</p>;
+
+  const nextVisitDoctorName = formatDoctorName(data.peerProviderName);
+  const runningDoctorName = data.runningConsultation ? formatDoctorName(data.runningConsultation.providerName) : "";
 
   return (
     <div className="space-y-8 pb-10">
@@ -79,7 +82,9 @@ export function PatientDashboard() {
               <div>
                 <h3 className="text-xs font-black uppercase tracking-[0.24em] text-sky-600 dark:text-sky-400 mb-1">Consultation in progress</h3>
                 <p className="text-base font-bold text-foreground">
-                  Your consultation with {formatDoctorName(data.runningConsultation.providerName)} is running now.
+                  {runningDoctorName
+                    ? `Your consultation with ${runningDoctorName} is running now.`
+                    : "Your consultation is running now."}
                 </p>
               </div>
             </div>
@@ -107,7 +112,7 @@ export function PatientDashboard() {
                   <span>{new Date(data.nextAppointment).toLocaleString([], { dateStyle: "short", timeStyle: "short", hour12: false })}</span>
                   <span className="text-muted-foreground font-medium"> with </span>
                   <span className="bg-gradient-to-r from-teal-600 via-emerald-600 to-teal-700 dark:from-teal-400 dark:via-emerald-400 dark:to-teal-500 bg-clip-text text-transparent font-black text-lg sm:text-xl tracking-tight drop-shadow-sm">
-                    {formatDoctorName(data.peerProviderName)}
+                    {nextVisitDoctorName || data.peerProviderName || "—"}
                   </span>
                   <span>.</span>
                 </>
@@ -153,6 +158,7 @@ export function PatientDashboard() {
                 {data.pastConsultations.map((c) => {
                   const isExpanded = expandedConsultationId === c.id;
                   const hasDetails = c.soapNote && (c.soapNote.subjective || c.soapNote.objective || c.soapNote.assessment || c.soapNote.plan);
+                  const doctorName = formatDoctorName(c.providerName) || c.providerName;
                   return (
                     <div
                       key={c.id}
@@ -162,9 +168,9 @@ export function PatientDashboard() {
                         <div>
                           <p className="text-sm font-bold text-foreground">
                             {new Date(c.startTime).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            with {formatDoctorName(c.providerName)}
+                            {doctorName && (
+                              <span className="text-muted-foreground font-medium"> · {doctorName}</span>
+                            )}
                           </p>
                           {c.reason && (
                             <p className="text-xs text-muted-foreground/80 mt-1 italic">&quot;{c.reason}&quot;</p>
@@ -235,9 +241,11 @@ export function PatientDashboard() {
               </div>
               <h3 className="text-xl font-black uppercase tracking-tight mb-2">Your Care Team</h3>
               <p className="text-sm font-medium text-muted-foreground leading-relaxed">
-                {data.peerProviderName
-                  ? `Connected with ${formatDoctorName(data.peerProviderName)}. Book follow-ups or chat via the panel.`
-                  : "Book your first appointment above to connect with a provider and start your care journey."}
+                {nextVisitDoctorName
+                  ? `Connected with ${nextVisitDoctorName}. Book follow-ups or chat via the panel.`
+                  : data.peerProviderId
+                    ? "Connected. Book follow-ups or chat via the panel."
+                    : "Book your first appointment above to connect and start your care journey."}
               </p>
             </Card>
           </div>

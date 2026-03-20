@@ -18,10 +18,6 @@ type PatientUserRow = {
   full_name: string | null;
 };
 
-type ProviderNameRow = {
-  id: string;
-  full_name: string | null;
-};
 
 export interface PastConsultation {
   id: string;
@@ -165,10 +161,11 @@ export async function fetchPatientDashboard(): Promise<PatientDashboardSnapshot>
       ? await supabase.from("users").select("id, full_name, email").in("id", providerIds)
       : { data: [] };
 
-    const providerNameRows = (providerRows ?? []) as Array<{ id: string; full_name: string | null; email?: string }>;
-    const nameById = new Map(
-      providerNameRows.map((p) => [p.id, (p.full_name?.trim() || p.email?.trim() || null) as string | null])
-    );
+    const nameById = new Map<string, string | null>();
+    for (const p of providerRows ?? []) {
+      const name = (p.full_name?.trim() || p.email?.trim() || null) as string | null;
+      if (p.id && name) nameById.set(p.id, name);
+    }
 
     const pastConsultations: PastConsultation[] = completedRows.map((a) => {
       const note = notesByAppt.get(a.id) ?? null;

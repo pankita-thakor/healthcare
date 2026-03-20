@@ -15,8 +15,8 @@ export interface ProviderAvailabilitySlot {
 /** @deprecated Use ProviderAvailabilitySlot - kept for backwards compatibility */
 export interface ProviderAvailability {
   available_date: string;
-  start_time: string;
-  end_time: string;
+    start_time: string;
+    end_time: string;
 }
 
 async function getCurrentUserId() {
@@ -131,13 +131,13 @@ export async function deleteProviderAvailability() {
 }
 
 export interface ProviderWeekAppointment {
-  id: string;
-  patient_id: string;
+      id: string;
+      patient_id: string;
   patient_name?: string | null;
-  start_time: string;
-  end_time: string;
-  status: string;
-  reason: string | null;
+      start_time: string;
+      end_time: string;
+      status: string;
+      reason: string | null;
   reschedule_reason: string | null;
 }
 
@@ -277,9 +277,9 @@ export async function fetchProviderDashboard(): Promise<ProviderDashboardSnapsho
   ] = await Promise.all([
     supabase.from("users").select("full_name").eq("id", providerId).maybeSingle(),
     supabase
-      .from("appointments")
-      .select("id, patient_id, start_time, status")
-      .eq("provider_id", providerId)
+        .from("appointments")
+        .select("id, patient_id, start_time, status")
+        .eq("provider_id", providerId)
       .gte("start_time", new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000).toISOString()),
     supabase.from("messages").select("id").eq("recipient_id", providerId).is("read_at", null)
   ]);
@@ -342,7 +342,7 @@ export async function fetchProviderDashboard(): Promise<ProviderDashboardSnapsho
     next.setMonth(next.getMonth() + 1);
     const count = appointments.filter(
       (a) => new Date(a.start_time) >= d && new Date(a.start_time) < next
-    ).length;
+  ).length;
     monthLabels.push(d.toLocaleDateString("en-US", { month: "short" }));
     monthCounts.push(count);
   }
@@ -525,15 +525,15 @@ export async function fetchProviderPatientProfile(patientId: string): Promise<Pr
       .eq("patient_id", patientId)
       .order("uploaded_at", { ascending: false }),
     supabase
-      .from("appointments")
+    .from("appointments")
       .select("id, start_time, end_time, status, reason")
       .eq("patient_id", patientId)
-      .eq("provider_id", providerId)
+    .eq("provider_id", providerId)
       .order("start_time", { ascending: false }),
     supabase
       .from("clinical_notes")
       .select("id, subjective, objective, assessment, plan, updated_at")
-      .eq("patient_id", patientId)
+    .eq("patient_id", patientId)
       .eq("provider_id", providerId)
       .order("updated_at", { ascending: false }),
     supabase

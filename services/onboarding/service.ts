@@ -1,23 +1,41 @@
 import { createBrowserClient } from "@/lib/supabase";
+import { safeGetUser } from "@/lib/supabase-auth";
 
 const supabase = createBrowserClient();
 
 function toReadableError(err: unknown) {
-  if (err instanceof TypeError && err.message.includes("Failed to fetch")) {
+  const msg =
+    err instanceof Error
+      ? err.message
+      : typeof err === "object" && err !== null && "message" in err
+        ? String((err as { message?: unknown }).message ?? "")
+        : String(err ?? "");
+
+  if (err instanceof TypeError && msg.includes("Failed to fetch")) {
     return new Error(
       "Network error while contacting Supabase. Check NEXT_PUBLIC_SUPABASE_URL/NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local, internet access, and then restart the dev server."
     );
   }
 
-  const msg = err instanceof Error ? err.message : String(err ?? "");
   if (/not authenticated|session expired|invalid.*token/i.test(msg)) {
     return new Error(
       "Your session has expired or you're using a demo account. Please confirm your email (if required) and sign in with your real account to save your details."
     );
   }
 
-  if (err instanceof Error) return err;
+  if (msg.trim()) return new Error(msg);
   return new Error("Unexpected onboarding error. Please try again.");
+}
+
+async function isPatientOnboardingAlreadyComplete(): Promise<boolean> {
+  const { user } = await safeGetUser();
+  if (!user) return false;
+  const { data } = await supabase
+    .from("patients")
+    .select("onboarding_completed")
+    .eq("user_id", user.id)
+    .maybeSingle();
+  return data?.onboarding_completed === true;
 }
 
 async function canTreatProviderConflictAsCompleted() {
@@ -56,8 +74,19 @@ export async function completePatientOnboarding(input: {
       p_emergency_contact: input.emergencyContact ?? null
     });
 
-    if (error) throw error;
+    if (error) {
+      if (error.code === "PGRST116" || error.message?.includes("409") || error.message?.toLowerCase().includes("conflict")) {
+        const alreadyComplete = await isPatientOnboardingAlreadyComplete();
+        if (alreadyComplete) return;
+      }
+      throw error;
+    }
   } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err ?? "");
+    if (/conflict|409|duplicate|already exists/i.test(msg)) {
+      const alreadyComplete = await isPatientOnboardingAlreadyComplete();
+      if (alreadyComplete) return;
+    }
     throw toReadableError(err);
   }
 }
