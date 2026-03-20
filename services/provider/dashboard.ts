@@ -605,7 +605,13 @@ export async function fetchProviderPatientProfile(patientId: string): Promise<Pr
 }
 
 // Provider categories
-export async function fetchProviderCategories(): Promise<{ id: string; name: string; description: string | null }[]> {
+export interface ProviderCategory {
+  id: string;
+  name: string;
+  description: string | null;
+}
+
+export async function fetchProviderCategories(): Promise<ProviderCategory[]> {
   const { data, error } = await supabase.from('provider_categories').select('id, name, description').order('name');
   if (error) throw error;
   return data ?? [];
