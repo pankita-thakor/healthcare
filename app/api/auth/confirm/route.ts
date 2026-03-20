@@ -1,6 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
 import { type EmailOtpType } from "@supabase/supabase-js";
-import { nextUrl } from "next/dist/server/web/spec-extension/next-url";
 import { type NextRequest, NextResponse } from "next/server";
 
 /**
