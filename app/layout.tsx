@@ -3,6 +3,7 @@ import { Roboto } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { LoadingProvider } from "@/components/layout/CreativeLoader";
+import { Analytics } from '@vercel/analytics/next';
 
 const roboto = Roboto({ weight: ["400", "500", "700"], subsets: ["latin"] });
 
@@ -20,6 +21,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             {children}
           </LoadingProvider>
         </ThemeProvider>
+        <Analytics />
       </body>
     </html>
   );
